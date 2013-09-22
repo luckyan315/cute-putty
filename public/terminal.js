@@ -158,8 +158,8 @@ function Terminal(container, r, c){
     this.$root = null;
     this.document = document;
     
-    this.$nRow = r | Terminal.ROW;
-    this.$nCol = c | Terminal.COL;
+    this.$nRow = r || Terminal.ROW;
+    this.$nCol = c || Terminal.COL;
 
     /* char content to be rendered */
     this.$rows = [];
@@ -180,8 +180,9 @@ function Terminal(container, r, c){
 	y: 0
     };
 
-    /* save parameters as parsing csi sequence */
+    /* save parameters as parsing escape sequence */
     this.$csiParams = [];
+    this.$oscParams = [];
     this.$curParam = 0;
 
     this.$curAttr = 0;
@@ -291,14 +292,15 @@ Terminal.OSC = 8; //ESC ],
 Terminal.ROW = 24;
 Terminal.COL = 80;
 
-//
+//default SGR attributes
 Terminal.DEFAULT_BACKGROUND_COLOR = 0;
 Terminal.DEFAULT_FOREGROUND_COLOR = 7;
-Terminal.DEFAULT_COMMON_TYPE = 0
+Terminal.DEFAULT_COMMON_TYPE = 0;
+Terminal.DEFAULT_BRIGHT = 0;
 
 //dark color, background = black, foreground = white, font
 Terminal.DEFAULT_SGR_ATTR =
-    0 << 12 |
+    Terminal.DEFAULT_BRIGHT << 12 |
     Terminal.DEFAULT_BACKGROUND_COLOR << 8 |
     Terminal.DEFAULT_FOREGROUND_COLOR << 4 |
     Terminal.DEFAULT_COMMON_TYPE;
@@ -351,6 +353,8 @@ Terminal.DEFAULT_SGR_ATTR =
 		    this.$rows[r][c] = [ch, this.$curAttr];
 		    c++;
 		};
+		this.$cursor.x = c;
+		this.$cursor.y = r;
 		break; /* Terminal.COMMON */
 	    case Terminal.ESC:
 		switch(ch){
@@ -664,8 +668,39 @@ Terminal.DEFAULT_SGR_ATTR =
 	    case Terminal.DCS:
 		break;
 	    case Terminal.OSC:
+		console.log('[BrowserIDE] OSC detacted!');
+
+		switch(ch){
+		case ';':
+		    //seperator of params
+		    this.$oscParams.push(this.$curParam);
+		    this.$curParam = 0;
+		    break;
+		case '\\':
+		    //String Terminator (ST)
+		    break;
+		case '\x07':
+		    //BEL
+		    // this.$oscPa
+		    this.$parse_state = Terminal.COMMON;
+		    break;
+		default:
+		    if( isDigit(ch) ){
+			//0 < ch < 9
+			this.$curParam = this.$curParam * 10 + ch.charCodeAt(0) - 48;
+		    } else {
+			this.$curParam = '';
+		    }
+		    
+
+		}
 		
-		break;
+		// if( isDigit(ch) ){
+		//     //0 < ch < 9
+		//     this.$curParam = this.$curParam * 10 + ch.charCodeAt(0) - 48;
+		// }
+		
+		break; /* Terminal.OSC */
 	    default:
 
 	    }
@@ -814,7 +849,42 @@ Terminal.DEFAULT_SGR_ATTR =
     };
 
     this.renderMatric = function(){
+	var r = this.$cursor.y;
+	var preAttr = null;
+	var htmlStart = '';
+	var bSpanOpen = false;
 	
+	for(var iCol=0; iCol< this.$nCol; iCol++){
+	    var ch = this.$rows[r][iCol][0];
+	    var attr = this.$rows[r][iCol][1];
+	    
+	    //SGR default attr
+	    var char_type = Terminal.DEFAULT_COMMON_TYPE;
+	    var fg = Terminal.DEFAULT_FOREGROUND_COLOR;
+	    var bg = Terminal.DEFAULT_BACKGROUND_COLOR;
+	    var bright = Terminal.DEFAULT_BRIGHT;
+	    
+	    // console.log('Row:' + r + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
+
+	    if(attr === preAttr){
+		//nothing
+	    } else {
+		htmlStart = bSpanOpen ? htmlStart + '</span>' : htmlStart;
+
+		htmlStart += '<span style="' +
+		    'color:' + Terminal.COLOR[fg][bright] + ';' +
+		    'background:' + Terminal.COLOR[bg][bright]+ ';' + '">';
+
+		bSpanOpen = true;
+	    }
+
+	    htmlStart += ch;
+
+	    //save previous attribute
+	    preAttr = attr;
+	}
+	htmlStart += '</span>';
+	console.log('[BrowserIDE][Render]' + htmlStart);
     };
     
     this.clearCsiParams = function(){
@@ -903,13 +973,6 @@ function EventEmitter(){
 
 //utils
 
-/**
- * Inherit the prototype method from superCtor into ctor
- *
- * @param {function} ctor constructor obj need to inherit
- * @param {function} superCtor constructor function to inherit prototype from
- * @param {void}
- */
 function inherits(ctor, superCtor) {
     function f() {
 	this.constructor = ctor;
@@ -940,6 +1003,18 @@ function getStyle(element, attr_name){
 function isDigit(ch){
     return ch >= '0' && ch <= '9';
 }
+
+Terminal.COLOR = {
+//idx: ['Dark',    'Bright']     
+    0: ['#000000', '#000000'], //black
+    1: ['#cd0000', '#ff0000'], //red
+    2: ['#00cd00', '#00ff00'], //green
+    3: ['#cdcd00', '#ffff00'], //yellow
+    4: ['#0000ee', '#5c5cff'], //blue
+    5: ['#cd00cd', '#ff00ff'], //magenta
+    6: ['#00cdcd', '#00ffff'], //cyan
+    7: ['#e5e5e5', '#ffffff'] //white
+};
 
 Terminal.keyNames = {3: "Enter", 8: "Backspace", 9: "Tab", 13: "Enter", 16: "Shift", 17: "Ctrl", 18: "Alt",
                      19: "Pause", 20: "CapsLock", 27: "Esc", 32: "Space", 33: "PageUp", 34: "PageDown", 35: "End",
