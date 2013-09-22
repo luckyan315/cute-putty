@@ -181,8 +181,8 @@ function Terminal(container, r, c){
     };
 
     /* save parameters as parsing escape sequence */
-    this.$csiParams = [];
-    this.$oscParams = [];
+    this.$escParams = [];
+    // this.$oscParams = [];
     this.$curParam = 0;
 
     this.$curAttr = 0;
@@ -428,7 +428,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		case ';':
 		    //TODO: csi ;
-		    this.$csiParams.push(this.$curParam);
+		    this.$escParams.push(this.$curParam);
 		    this.$curParam = 0;
 		    break;
 		case 'A': 
@@ -556,7 +556,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		case 'm':
 		    //SGR, Character Atrributes, see more info at REF
-		    this.$csiParams.push(this.$curParam);
+		    this.$escParams.push(this.$curParam);
 		    this.setCharAttr();
 		    this.clearCsiParams();
 		    this.$parse_state = Terminal.COMMON;
@@ -673,7 +673,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		switch(ch){
 		case ';':
 		    //seperator of params
-		    this.$oscParams.push(this.$curParam);
+		    this.$escParams.push(this.$curParam);
 		    this.$curParam = 0;
 		    break;
 		case '\\':
@@ -681,7 +681,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		case '\x07':
 		    //BEL
-		    // this.$oscPa
+		    this.$escParams.push(this.$curParam);
 		    this.$parse_state = Terminal.COMMON;
 		    break;
 		default:
@@ -692,7 +692,7 @@ Terminal.DEFAULT_SGR_ATTR =
 			this.$curParam = '';
 		    }
 		    
-
+		    
 		}
 		
 		// if( isDigit(ch) ){
@@ -740,11 +740,11 @@ Terminal.DEFAULT_SGR_ATTR =
     };  
 
     this.setCharAttr = function(){
-	console.log('[Parameters]:' + this.$csiParams);
+	console.log('[Parameters]:' + this.$escParams);
 
 	var curAttr = 0;
 
-	if( this.$csiParams.length === 0 ){
+	if( this.$escParams.length === 0 ){
 	    curAttr = Terminal.DEFAULT_SGR_ATTR;
 	} else {
 	    //0-3 bit
@@ -756,8 +756,8 @@ Terminal.DEFAULT_SGR_ATTR =
 	    //12th bit
 	    var bright = Terminal.DEFAULT_SGR_ATTR >> 12 & 1;
 	    
-	    for(var i=0; i<this.$csiParams.length; i++){
-		var param = this.$csiParams[i];
+	    for(var i=0; i<this.$escParams.length; i++){
+		var param = this.$escParams[i];
 		if( param >=0 && param < 30 ){
 		    switch(param){
 		    case 0:
@@ -889,7 +889,7 @@ Terminal.DEFAULT_SGR_ATTR =
     
     this.clearCsiParams = function(){
 	this.$curParam = 0;
-	this.$csiParams = [];
+	this.$escParams = [];
     };
     
     //send data to server
