@@ -148,6 +148,9 @@ function main(){
     
     term.draw();
 
+    // setInterval(function(){
+    // 	term.refreshCursor();
+    // }, 500);
 }
 
 
@@ -179,6 +182,7 @@ function Terminal(container, r, c){
 	x: 0,
 	y: 0
     };
+    this.$showCursor = 0;
 
     /* save parameters as parsing escape sequence */
     this.$escParams = [];
@@ -252,7 +256,10 @@ function Terminal(container, r, c){
 	    //alt
 	    
 	    break;
-	    
+	case 27:
+	    //esc
+	    ch = '\x1b';
+	    break;
 	default:
 	    if( e.ctrlKey ){
 		if (e.keyCode >= 65 && e.keyCode <= 90) {
@@ -745,7 +752,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	    // this.$rows[this.$curline].innerHTML += ch;
 	}
 	
-	this.renderMatric();
+	this.renderMatrix();
     };
     
     this.draw = function(){
@@ -871,18 +878,20 @@ Terminal.DEFAULT_SGR_ATTR =
 	
 	this.$curAttr = curAttr;
     };
-
-    this.renderMatric = function(){
+    
+    this.renderMatrix = function(row){
 	var r = this.$cursor.y;
-	var preAttr = null;
-	var htmlStart = '';
-	var bSpanOpen = false;
-
-	for(var iRow=0; iRow <= r; iRow++){
-	    var preAttr = null;
+	var iRow = 0;
+	
+	if( row ){
+	    iRow = row;
+	}
+	
+	for(iRow=0; iRow <= r; iRow++){
+	    var preAttr = Terminal.DEFAULT_SGR_ATTR;
 	    var htmlStart = '';
 	    var bSpanOpen = false;
-
+	    
 	    for(var iCol=0; iCol< this.$nCol; iCol++){
 		var ch = this.$rows[iRow][iCol][0];
 		var attr = this.$rows[iRow][iCol][1];
@@ -894,75 +903,53 @@ Terminal.DEFAULT_SGR_ATTR =
 		var bright = Terminal.DEFAULT_BRIGHT;
 		
 		// console.info('Row:' + iRow + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
-
-		if(attr === preAttr && attr !== Terminal.DEFAULT_SGR_ATTR){
-		    //nothing
-		    
-		} else if(attr === Terminal.DEFAULT_SGR_ATTR){
-		    switch(ch){
-		    case ' ':
-			//blank_space
-			htmlStart = bSpanOpen ?
-			    ((bSpanOpen  = false), htmlStart + '</span>') : htmlStart;
-			// ch = '&nbsp;';
-			ch = ' ';
-			break;
-		    case '<':
-			htmlStart = bSpanOpen ?
-			    ((bSpanOpen  = false), htmlStart + '</span>') : htmlStart;
-			ch = '&lt;';
-			break;
-		    case '>':
-			htmlStart = bSpanOpen ?
-			    ((bSpanOpen = false), htmlStart + '</span>') : htmlStart;
-			ch = '&gt;'
-			break;
-		    case '&':
-			htmlStart = bSpanOpen ?
-			    ((bSpanOpen = false), htmlStart + '</span>') : htmlStart;
-			ch = '&amp;'
-			break;
-		    case '"':
-			htmlStart = bSpanOpen ?
-			    ((bSpanOpen = false), htmlStart + '</span>') : htmlStart;
-			ch = '&quot;';
-			break;
-		    case '\'':
-			htmlStart = bSpanOpen ?
-			    ((bSpanOpen = false), htmlStart + '</span>') : htmlStart;
-			ch =  '&apos;';
-			break; 
-		    default:
-			//nothing
-			ch = ch;
-		    }
+		
+		if( this.$showCursor &&
+		    iRow === this.$cursor.y &&
+		    iCol === this.$cursor.x){
+		    attr = 4 | attr;
+		    htmlStart += '<span class="reverse-video">';
 		} else {
-		    htmlStart = bSpanOpen ? 
-			((bSpanOpen = false), htmlStart + '</span>') : htmlStart;
+		    if( attr !== preAttr ){
+			if( preAttr !== Terminal.DEFAULT_SGR_ATTR ){
+			    htmlStart += '</span>';
+			}
 
-		    htmlStart += '<span style="' +
-			'font-weight:' + (char_type === 1 ? 'bold' : 'normal') + ';' +
-			'color:' + Terminal.COLOR[fg][bright] + ';' +
-			'background:' + Terminal.COLOR[bg][bright]+ ';' + '">';
+			if( attr !== Terminal.DEFAULT_SGR_ATTR ){
+			    htmlStart += '<span style="' +
+				'font-weight:' + (char_type === 1 ? 'bold' : 'normal') + ';' +
+				'color:' + Terminal.COLOR[fg][bright] + ';' +
+				'background:' + Terminal.COLOR[bg][bright]+ ';' + '">';
+			    
+			}
 
-		    bSpanOpen = true;
+		    }
+
 		}
-
 		htmlStart += ch;
 		
 		//save previous attribute
 		preAttr = attr;
 	    }
-	    
-	    htmlStart = bSpanOpen ?
-		((bSpanOpen = false), htmlStart + '</span>') : htmlStart;	    
+	    if( preAttr !== Terminal.DEFAULT_SGR_ATTR ){
+		htmlStart += '</span>';
+	    }
+
 	    console.info('[BrowserIDE][Render][Row:'+ iRow +']' + htmlStart);
 	}
-	
-	
-
     };
-    
+
+    this.refreshCursor = function(){
+	var r = this.$cursor.y;
+	var c = this.$cursor.x;
+	this.$showCursor = 1;
+	this.renderMatrix(r);
+    };
+
+    this.reverseColor = function(attr){
+	
+    };
+
     this.clearEscParams = function(){
 	this.$curParam = 0;
 	this.$escParams = [];
