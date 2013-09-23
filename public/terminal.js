@@ -188,6 +188,8 @@ function Terminal(container, r, c){
     this.$curAttr = 0;
     
     this.$parse_state = Terminal.COMMON;
+
+    this.$window_title = '';
     
     var _this = this;
     
@@ -205,7 +207,7 @@ function Terminal(container, r, c){
 	ch = String.fromCharCode(keycode);
 	_this.send(ch);
 	stopBubbling(e);
-	// console.log(String.fromCharCode(keycode) + ' keycode: ' + keycode);
+	// console.info(String.fromCharCode(keycode) + ' keycode: ' + keycode);
     };
 
     //
@@ -314,7 +316,7 @@ Terminal.DEFAULT_SGR_ATTR =
     //public
     
     this.handleMessage = function(data){
-	console.log('[Terminal]' + data.replace(/\x1b/g, 'u001b'));
+	console.info('[Terminal]' + data.replace(/\x1b/g, 'u001b'));
 
 	//init vars
 	var content = data;
@@ -558,7 +560,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    //SGR, Character Atrributes, see more info at REF
 		    this.$escParams.push(this.$curParam);
 		    this.setCharAttr();
-		    this.clearCsiParams();
+		    this.clearEscParams();
 		    this.$parse_state = Terminal.COMMON;
 		    
 		    break;
@@ -668,28 +670,52 @@ Terminal.DEFAULT_SGR_ATTR =
 	    case Terminal.DCS:
 		break;
 	    case Terminal.OSC:
-		console.log('[BrowserIDE] OSC detacted!');
+		//OSC Ps ; Pt ST
+		//OSC Ps ; Pt BEL
+		console.info('[BrowserIDE] OSC detacted!');
 
 		switch(ch){
 		case ';':
 		    //seperator of params
 		    this.$escParams.push(this.$curParam);
-		    this.$curParam = 0;
+		    this.$curParam = ''; //2nd param is a string
 		    break;
 		case '\\':
 		    //String Terminator (ST)
+		    //OSC Ps ; Pt ST
+		    
 		    break;
 		case '\x07':
 		    //BEL
+		    //OSC Ps ; Pt BEL
 		    this.$escParams.push(this.$curParam);
+		    if( this.$escParams.length === 2 ){ //Ps; Pt
+			switch(this.$escParams[0]){
+			case 0:
+			case 1:
+			case 2:
+			    //set window title
+			    this.$window_title = this.$escParams[1];
+			    break;
+			default:
+			    console.error('[BrowserIDE][OSC][BEL]Unknown Ps Param: ' + this.$escParam[0] + 'Maybe need to update [OSC][BEL] parser!');
+			    break;
+			}
+
+			//resets
+			this.clearEscParams();
+			this.$parse_state = Terminal.COMMON;
+		    }
+
 		    this.$parse_state = Terminal.COMMON;
 		    break;
 		default:
-		    if( isDigit(ch) ){
-			//0 < ch < 9
+		    if( this.$escParams.length ===0 && isDigit(ch) ){
+			//just handle 1st param Ps(single digit),0 < ch < 9
 			this.$curParam = this.$curParam * 10 + ch.charCodeAt(0) - 48;
 		    } else {
-			this.$curParam = '';
+			//handle 2nd param Pt(text string)
+			this.$curParam += ch;
 		    }
 		    
 		    
@@ -740,7 +766,7 @@ Terminal.DEFAULT_SGR_ATTR =
     };  
 
     this.setCharAttr = function(){
-	console.log('[Parameters]:' + this.$escParams);
+	console.info('[Parameters]:' + this.$escParams);
 
 	var curAttr = 0;
 
@@ -797,7 +823,7 @@ Terminal.DEFAULT_SGR_ATTR =
 			char_type = 8;
 			break;
 		    default:
-			console.log('[BrowserIDE][SGR]Unknown character attribute:' + param);
+			console.error('[BrowserIDE][SGR]Unknown character attribute:' + param);
 			char_type = 0; //normal
 		    }
 		} else if(param >= 30 && param <= 39){
@@ -864,7 +890,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	    var bg = Terminal.DEFAULT_BACKGROUND_COLOR;
 	    var bright = Terminal.DEFAULT_BRIGHT;
 	    
-	    // console.log('Row:' + r + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
+	    // console.info('Row:' + r + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
 
 	    if(attr === preAttr){
 		//nothing
@@ -884,10 +910,10 @@ Terminal.DEFAULT_SGR_ATTR =
 	    preAttr = attr;
 	}
 	htmlStart += '</span>';
-	console.log('[BrowserIDE][Render]' + htmlStart);
+	console.info('[BrowserIDE][Render]' + htmlStart);
     };
     
-    this.clearCsiParams = function(){
+    this.clearEscParams = function(){
 	this.$curParam = 0;
 	this.$escParams = [];
     };
