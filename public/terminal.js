@@ -185,7 +185,7 @@ function Terminal(container, r, c){
     // this.$oscParams = [];
     this.$curParam = 0;
 
-    this.$curAttr = 0;
+    this.$curAttr = Terminal.DEFAULT_SGR_ATTR;
     
     this.$parse_state = Terminal.COMMON;
 
@@ -879,6 +879,10 @@ Terminal.DEFAULT_SGR_ATTR =
 	var bSpanOpen = false;
 
 	for(var iRow=0; iRow <= r; iRow++){
+	    var preAttr = null;
+	    var htmlStart = '';
+	    var bSpanOpen = false;
+
 	    for(var iCol=0; iCol< this.$nCol; iCol++){
 		var ch = this.$rows[iRow][iCol][0];
 		var attr = this.$rows[iRow][iCol][1];
@@ -899,32 +903,33 @@ Terminal.DEFAULT_SGR_ATTR =
 		    case ' ':
 			//blank_space
 			htmlStart = bSpanOpen ?
-			    (htmlStart + '</span>', (bSpanOpen  = false)) : htmlStart;
-			ch = '&nbsp;';
+			    ((bSpanOpen  = false), htmlStart + '</span>') : htmlStart;
+			// ch = '&nbsp;';
+			ch = ' ';
 			break;
 		    case '<':
 			htmlStart = bSpanOpen ?
-			    (htmlStart + '</span>', (bSpanOpen  = false)) : htmlStart;
+			    ((bSpanOpen  = false), htmlStart + '</span>') : htmlStart;
 			ch = '&lt;';
 			break;
 		    case '>':
 			htmlStart = bSpanOpen ?
-			    (htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
+			    ((bSpanOpen = false), htmlStart + '</span>') : htmlStart;
 			ch = '&gt;'
 			break;
 		    case '&':
 			htmlStart = bSpanOpen ?
-			    (htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
+			    ((bSpanOpen = false), htmlStart + '</span>') : htmlStart;
 			ch = '&amp;'
 			break;
 		    case '"':
 			htmlStart = bSpanOpen ?
-			    (htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
+			    ((bSpanOpen = false), htmlStart + '</span>') : htmlStart;
 			ch = '&quot;';
 			break;
 		    case '\'':
 			htmlStart = bSpanOpen ?
-			    (htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
+			    ((bSpanOpen = false), htmlStart + '</span>') : htmlStart;
 			ch =  '&apos;';
 			break; 
 		    default:
@@ -932,10 +937,11 @@ Terminal.DEFAULT_SGR_ATTR =
 			ch = ch;
 		    }
 		} else {
-		    htmlStart = bSpanOpen ?
-			(htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
+		    htmlStart = bSpanOpen ? 
+			((bSpanOpen = false), htmlStart + '</span>') : htmlStart;
 
 		    htmlStart += '<span style="' +
+			'font-weight:' + (char_type === 1 ? 'bold' : 'normal') + ';' +
 			'color:' + Terminal.COLOR[fg][bright] + ';' +
 			'background:' + Terminal.COLOR[bg][bright]+ ';' + '">';
 
@@ -947,13 +953,14 @@ Terminal.DEFAULT_SGR_ATTR =
 		//save previous attribute
 		preAttr = attr;
 	    }
-
+	    
+	    htmlStart = bSpanOpen ?
+		((bSpanOpen = false), htmlStart + '</span>') : htmlStart;	    
+	    console.info('[BrowserIDE][Render][Row:'+ iRow +']' + htmlStart);
 	}
 	
 	
-	htmlStart = bSpanOpen ?
-	    (htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
-	console.info('[BrowserIDE][Render]' + htmlStart);
+
     };
     
     this.clearEscParams = function(){
