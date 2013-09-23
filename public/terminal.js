@@ -295,7 +295,7 @@ Terminal.ROW = 24;
 Terminal.COL = 80;
 
 //default SGR attributes
-Terminal.DEFAULT_BACKGROUND_COLOR = 0;
+Terminal.DEFAULT_BACKGROUND_COLOR = 9;
 Terminal.DEFAULT_FOREGROUND_COLOR = 7;
 Terminal.DEFAULT_COMMON_TYPE = 0;
 Terminal.DEFAULT_BRIGHT = 0;
@@ -394,7 +394,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		default:
 		    //
-		    throw new Error('Unkown PARSE_STATE:' + ch); 
+		    console.error('[BrowserIDE][ESC]Unkown PARSE_STATE:' + ch); 
 		    break;
 		};
 
@@ -834,10 +834,10 @@ Terminal.DEFAULT_SGR_ATTR =
 		    } else if (param === 38){
 			//Set foreground color in RGB value, matching
 			//closet entry in 256 colors palette.
-			
+			//TODO: fg color == rgb 
 		    } else {
 			//param = 39, Set foreground color to default
-			
+			fg = Terminal.DEFAULT_FOREGROUND_COLOR;
 		    }
 		} else if(param >= 40 && param <= 49){
 		    if( param >= 40 && param <= 47 ){
@@ -847,10 +847,10 @@ Terminal.DEFAULT_SGR_ATTR =
 		    } else if(param === 48) {
 			//Set background color in RGB value,
 			//matching closet entry in 256 colors palette.
-			
+			//TODO: bg color == rgb
 		    } else {
 			//param = 49, Set background color to default
-			
+			bg = Terminal.DEFAULT_BACKGROUND_COLOR;
 		    }
 		} else if(param >= 90 && param <= 97){
 		    //Set Bright foreground color
@@ -866,11 +866,9 @@ Terminal.DEFAULT_SGR_ATTR =
 		}
 	    }
 
-          curAttr = bright << 12 | bg << 8 | fg << 4 | char_type;
+            curAttr = bright << 12 | bg << 8 | fg << 4 | char_type;
 	}
-
 	
-
 	this.$curAttr = curAttr;
     };
 
@@ -879,37 +877,82 @@ Terminal.DEFAULT_SGR_ATTR =
 	var preAttr = null;
 	var htmlStart = '';
 	var bSpanOpen = false;
-	
-	for(var iCol=0; iCol< this.$nCol; iCol++){
-	    var ch = this.$rows[r][iCol][0];
-	    var attr = this.$rows[r][iCol][1];
-	    
-	    //SGR default attr
-	    var char_type = Terminal.DEFAULT_COMMON_TYPE;
-	    var fg = Terminal.DEFAULT_FOREGROUND_COLOR;
-	    var bg = Terminal.DEFAULT_BACKGROUND_COLOR;
-	    var bright = Terminal.DEFAULT_BRIGHT;
-	    
-	    // console.info('Row:' + r + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
 
-	    if(attr === preAttr){
-		//nothing
-	    } else {
-		htmlStart = bSpanOpen ? htmlStart + '</span>' : htmlStart;
+	for(var iRow=0; iRow <= r; iRow++){
+	    for(var iCol=0; iCol< this.$nCol; iCol++){
+		var ch = this.$rows[iRow][iCol][0];
+		var attr = this.$rows[iRow][iCol][1];
+		
+		//SGR default attr
+		var char_type = Terminal.DEFAULT_COMMON_TYPE;
+		var fg = Terminal.DEFAULT_FOREGROUND_COLOR;
+		var bg = Terminal.DEFAULT_BACKGROUND_COLOR;
+		var bright = Terminal.DEFAULT_BRIGHT;
+		
+		// console.info('Row:' + iRow + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
 
-		htmlStart += '<span style="' +
-		    'color:' + Terminal.COLOR[fg][bright] + ';' +
-		    'background:' + Terminal.COLOR[bg][bright]+ ';' + '">';
+		if(attr === preAttr && attr !== Terminal.DEFAULT_SGR_ATTR){
+		    //nothing
+		    
+		} else if(attr === Terminal.DEFAULT_SGR_ATTR){
+		    switch(ch){
+		    case ' ':
+			//blank_space
+			htmlStart = bSpanOpen ?
+			    (htmlStart + '</span>', (bSpanOpen  = false)) : htmlStart;
+			ch = '&nbsp;';
+			break;
+		    case '<':
+			htmlStart = bSpanOpen ?
+			    (htmlStart + '</span>', (bSpanOpen  = false)) : htmlStart;
+			ch = '&lt;';
+			break;
+		    case '>':
+			htmlStart = bSpanOpen ?
+			    (htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
+			ch = '&gt;'
+			break;
+		    case '&':
+			htmlStart = bSpanOpen ?
+			    (htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
+			ch = '&amp;'
+			break;
+		    case '"':
+			htmlStart = bSpanOpen ?
+			    (htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
+			ch = '&quot;';
+			break;
+		    case '\'':
+			htmlStart = bSpanOpen ?
+			    (htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
+			ch =  '&apos;';
+			break; 
+		    default:
+			//nothing
+			ch = ch;
+		    }
+		} else {
+		    htmlStart = bSpanOpen ?
+			(htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
 
-		bSpanOpen = true;
+		    htmlStart += '<span style="' +
+			'color:' + Terminal.COLOR[fg][bright] + ';' +
+			'background:' + Terminal.COLOR[bg][bright]+ ';' + '">';
+
+		    bSpanOpen = true;
+		}
+
+		htmlStart += ch;
+		
+		//save previous attribute
+		preAttr = attr;
 	    }
 
-	    htmlStart += ch;
-
-	    //save previous attribute
-	    preAttr = attr;
 	}
-	htmlStart += '</span>';
+	
+	
+	htmlStart = bSpanOpen ?
+	    (htmlStart + '</span>', (bSpanOpen = false)) : htmlStart;
 	console.info('[BrowserIDE][Render]' + htmlStart);
     };
     
@@ -1039,7 +1082,8 @@ Terminal.COLOR = {
     4: ['#0000ee', '#5c5cff'], //blue
     5: ['#cd00cd', '#ff00ff'], //magenta
     6: ['#00cdcd', '#00ffff'], //cyan
-    7: ['#e5e5e5', '#ffffff'] //white
+    7: ['#e5e5e5', '#ffffff'], //white
+    9: ['#303030', '#303030'] //default background color, for test
 };
 
 Terminal.keyNames = {3: "Enter", 8: "Backspace", 9: "Tab", 13: "Enter", 16: "Shift", 17: "Ctrl", 18: "Alt",
