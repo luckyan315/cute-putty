@@ -173,6 +173,9 @@ function Terminal(container, r, c){
 	}
 	this.$rows.push(row);
     }
+
+    /* row divs */
+    this.$rowDivs = [];
     
     /* line nums received from server */
     this.$curline = 0;
@@ -183,16 +186,16 @@ function Terminal(container, r, c){
 	y: 0
     };
     this.$showCursor = 0;
-
+    
     /* save parameters as parsing escape sequence */
     this.$escParams = [];
     // this.$oscParams = [];
     this.$curParam = 0;
-
+    
     this.$curAttr = Terminal.DEFAULT_SGR_ATTR;
     
     this.$parse_state = Terminal.COMMON;
-
+    
     this.$window_title = '';
     
     var _this = this;
@@ -407,7 +410,7 @@ Terminal.DEFAULT_SGR_ATTR =
 
 		break; /* Terminal.ESC */
 	    case Terminal.CSI:
-		console.log('[BrowserIDE] CSI detacted!');
+		// console.log('[BrowserIDE][CSI] CSI detacted!');
 		
 		switch(ch){
 		case '0':/* 48 */
@@ -679,7 +682,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	    case Terminal.OSC:
 		//OSC Ps ; Pt ST
 		//OSC Ps ; Pt BEL
-		console.info('[BrowserIDE] OSC detacted!');
+		// console.info('[BrowserIDE] OSC detacted!');
 
 		switch(ch){
 		case ';':
@@ -760,10 +763,10 @@ Terminal.DEFAULT_SGR_ATTR =
 	this.$root = this.document.createElement('div');
 	this.$root.className = 'terminal';
 	
-	for(var i = 0; i < this.$row; i++) {
+	for(var i = 0; i < this.$nRow; i++) {
 	    oRowDiv = this.document.createElement('div');
 	    this.$root.appendChild(oRowDiv);
-	    // this.$rows.push(oRowDiv);
+	    this.$rowDivs.push(oRowDiv);
 	}
 
 	if( this.$container == false){
@@ -887,7 +890,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	    iRow = row;
 	}
 	
-	for(iRow=0; iRow <= r; iRow++){
+	for(; iRow <= r; iRow++){
 	    var preAttr = Terminal.DEFAULT_SGR_ATTR;
 	    var htmlStart = '';
 	    var bSpanOpen = false;
@@ -897,10 +900,10 @@ Terminal.DEFAULT_SGR_ATTR =
 		var attr = this.$rows[iRow][iCol][1];
 		
 		//SGR default attr
-		var char_type = Terminal.DEFAULT_COMMON_TYPE;
-		var fg = Terminal.DEFAULT_FOREGROUND_COLOR;
-		var bg = Terminal.DEFAULT_BACKGROUND_COLOR;
-		var bright = Terminal.DEFAULT_BRIGHT;
+		var char_type = attr & 0xf;
+		var fg = attr >> 4 & 0xf;
+		var bg = attr >> 8 & 0xf;
+		var bright = attr >> 12 & 1;
 		
 		// console.info('Row:' + iRow + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
 		
@@ -934,8 +937,13 @@ Terminal.DEFAULT_SGR_ATTR =
 	    if( preAttr !== Terminal.DEFAULT_SGR_ATTR ){
 		htmlStart += '</span>';
 	    }
+	    this.$rowDivs[iRow].innerHTML = htmlStart;
 
 	    console.info('[BrowserIDE][Render][Row:'+ iRow +']' + htmlStart);
+	}
+
+	if( this.$container ){
+	    this.$container.appendChild(this.$root);
 	}
     };
 
