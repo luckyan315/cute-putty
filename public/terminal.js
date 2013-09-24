@@ -148,9 +148,12 @@ function main(){
     
     term.draw();
 
-    // setInterval(function(){
-    // 	term.refreshCursor();
-    // }, 500);
+    term.send('\r');
+    term.refreshCursor();
+
+    setInterval(function(){
+    	term.refreshCursor();
+    }, 1000);
 }
 
 
@@ -185,7 +188,11 @@ function Terminal(container, r, c){
 	x: 0,
 	y: 0
     };
-    this.$showCursor = 0;
+    /* show(1)/hide(0) cursor */
+    this.$showCursor = 1;
+
+    /* cursor blink state  */
+    this.$blink_state = 0;
     
     /* save parameters as parsing escape sequence */
     this.$escParams = [];
@@ -908,10 +915,17 @@ Terminal.DEFAULT_SGR_ATTR =
 		// console.info('Row:' + iRow + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
 		
 		if( this.$showCursor &&
+		    this.$blink_state &&
 		    iRow === this.$cursor.y &&
 		    iCol === this.$cursor.x){
 		    attr = 4 | attr;
-		    htmlStart += '<span class="reverse-video">';
+		    fg ^= bg;
+		    bg ^= fg;
+		    fg ^= bg;
+		    htmlStart += '<span class="reverse-video"' +
+			'style="' +
+			'color:' + Terminal.COLOR[fg][0] + ';' +
+			'background:' + Terminal.COLOR[bg][0] + ';' + '">';
 		} else {
 		    if( attr !== preAttr ){
 			if( preAttr !== Terminal.DEFAULT_SGR_ATTR ){
@@ -928,6 +942,30 @@ Terminal.DEFAULT_SGR_ATTR =
 
 		    }
 
+		}
+
+		switch(ch){
+		case ' ':
+		    //blank_space
+		    ch = '&nbsp';
+		    break;
+		case '<':
+		    ch = '&lt;'
+		    break;
+		case '>':
+		    ch = '&gt;';
+		    break;
+		case '&':
+		    ch = '&amp;';
+		    break;
+		case '"':
+		    ch = '&quot;';
+		    break;
+		case '\'':
+		    // ch = 'apos' //IE not support ?
+		    break;
+		default:
+		    
 		}
 		htmlStart += ch;
 		
@@ -951,6 +989,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	var r = this.$cursor.y;
 	var c = this.$cursor.x;
 	this.$showCursor = 1;
+	this.$blink_state ^= 1;
 	this.renderMatrix(r);
     };
 
