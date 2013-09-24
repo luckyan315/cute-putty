@@ -337,8 +337,6 @@ Terminal.DEFAULT_SGR_ATTR =
 
 	//init vars
 	var content = data;
-	var c = this.$cursor.x;
-	var r = this.$cursor.y;
 	
 	this.$parse_state = this.$parse_state || Terminal.COMMON;
 	
@@ -355,26 +353,24 @@ Terminal.DEFAULT_SGR_ATTR =
 		    //TODO: next tab pos
 		    break;
 		case '\n':
-		    r++;
+		    this.$cursor.y++;
 		    break;
 		case '\r':
-		    c = 0;
+		    this.$cursor.x = 0;
 		    break;
 		case '\b':
-		    if(c>0){
-			c--;
+		    if(this.$cursor.x > 0){
+			this.$cursor.x--;
 		    }
 		    break;
 		default:
-		    if( c >= this.$nCol ){
-			c = 0;
-			r++;
+		    if( this.$cursor.x >= this.$nCol ){
+			this.$cursor.x = 0;
+			this.$cursor.y++;
 		    }
-		    this.$rows[r][c] = [ch, this.$curAttr];
-		    c++;
+		    this.$rows[this.$cursor.y][this.$cursor.x] = [ch, this.$curAttr];
+		    this.$cursor.x++;
 		};
-		this.$cursor.x = c;
-		this.$cursor.y = r;
 		break; /* Terminal.COMMON */
 	    case Terminal.ESC:
 		switch(ch){
@@ -478,17 +474,42 @@ Terminal.DEFAULT_SGR_ATTR =
 			//Moves cursor to the Ps-th column of the active line. 
 			break;
 		    case 'H':
-			//Moves cursor to the Ps1-th line and to the Ps2-th column. 
-			break;
+			//Moves cursor to the Ps1-th line and to the Ps2-th column.
+			this.$cursor.x = this.$escParams[1] || 0;
+			this.$cursor.y = this.$escParams[0] || 0;
+
+			// console.info('[BrowserIDE][CSI H]Row:' + this.$cursor.y + ' Col:' + this.$cursor.x);
+
+			break; /* end of case 'H' */
 		    case 'I':
-			//Moves cursor to the Ps tabs forward. 
+			//Moves cursor to the Ps tabs forward.
+			
 			break;
 		    case 'J':
 			//Erase in display. The default value of Ps is 0.
 			//Ps = 0      Erase from cursor through the end of the display.
 			//   = 1      Erase from the beginning of the display through the cursor.
 			//   = 2      Erase the complete of display.
-			break;
+			var ps = this.$escParams[0];
+
+			switch(ps){
+			case 0:
+			    this.eraseDisplay(this.$cursor, {x: this.$nCol-1, y: this.$nRow-1});
+			    break;
+			case 1:
+			    this.eraseDisplay({x:0,y:0}, this.$cursor);
+			    break;
+			case 2:
+			    this.eraseDisplay({x:0,y:0}, {x: this.$nCol-1, y: this.$nRow-1});
+			    this.renderMatrix(0, this.$nRow-1);
+			    this.$cursor.x = 0;
+			    this.$cursor.y = 0;
+			    break;
+			default:
+			    console.error('[BrowserIDE][CSI J]Unknown state:' + ps);
+			    break;
+			}
+			break; /* end of case 'J' */
 		    case 'K':
 			//Erase in line. The default value of Ps is 0.
 			// Ps = 0      Erase from the cursor through the end of the line.
@@ -499,20 +520,20 @@ Terminal.DEFAULT_SGR_ATTR =
 
 			switch(ps){
 			case 0:
-			    this.eraseLine(this.$cursor.x);
+			    this.eraseLine(this.$cursor.y, this.$cursor.x);
 			    break;
 			case 1:
-			    this.eraseLine(0, this.$cursor.x);
+			    this.eraseLine(this.$cursor.y, 0, this.$cursor.x);
 			    break;
 			case 2:
-			    this.eraseLine(0);
+			    this.eraseLine(this.$cursor.y, 0);
 			    break;
 			default:
 			    console.error('[BrowserIDE][CSI K]Unknown state:' + ps);
 			    break;
 			}
 			
-			break;
+			break; /* end of case K */
 		    case 'L':
 			//Inserts Ps lines, stgarting at the cursor. The default 1. 
 			break;
@@ -789,7 +810,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	    // this.$rows[this.$curline].innerHTML += ch;
 	}
 	
-	this.renderMatrix();
+	this.renderMatrix(0, this.$cursor.y);
     };
     
     this.draw = function(){
@@ -915,16 +936,17 @@ Terminal.DEFAULT_SGR_ATTR =
 	
 	this.$curAttr = curAttr;
     };
-    
-    this.renderMatrix = function(row){
-	var r = this.$cursor.y;
+
+    //rStart[0,~](row start pos), rEnd[~, this.$nRow-1](row end pos)
+    this.renderMatrix = function(rStart, rEnd){
+	// var r = this.$cursor.y;
 	var iRow = 0;
 	
-	if( row ){
-	    iRow = row;
+	if( rStart ){
+	    iRow = rStart;
 	}
 	
-	for(; iRow <= r; iRow++){
+	for(; iRow <= rEnd; iRow++){
 	    var preAttr = Terminal.DEFAULT_SGR_ATTR;
 	    var htmlStart = '';
 	    var bSpanOpen = false;
@@ -1013,15 +1035,38 @@ Terminal.DEFAULT_SGR_ATTR =
 	}
     };
 
-    //s(start pos), e(end pos)
-    this.eraseLine = function(s, e){
-	var r = this.$cursor.y;
-	var _s = s;
+    //r(row), s(start pos), e(end pos)
+    this.eraseLine = function(r, s, e){
+	var _s = s || 0;
 	var _e = e || this.$nCol;
 	
 	for(var iCol= _s; iCol<_e; iCol++){
 	    this.$rows[r][iCol] = [' ', Terminal.DEFAULT_SGR_ATTR];
 	}
+    };
+
+    //s(row), e(col)
+    this.eraseDisplay = function(s, e){
+	var isRow = s.y;
+	var isCol = s.x;
+	var endRow = e.y;
+	var endCol = e.x;
+
+	for(; isRow <= endRow; isRow++){
+	    if(isRow === s.y){
+		//1st line
+		this.eraseLine(isRow, s.x);
+		continue;
+	    }
+
+	    if(isRow === e.y){
+		this.eraseLine(isRow, 0, e.x);
+		continue;
+	    }
+
+	    this.eraseLine(isRow);
+	}
+	
     };
     
     this.refreshCursor = function(){
@@ -1029,7 +1074,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	var c = this.$cursor.x;
 	this.$showCursor = 1;
 	this.$blink_state ^= 1;
-	this.renderMatrix(r);
+	this.renderMatrix(r, r);
     };
 
     //reverse fg/bg color
