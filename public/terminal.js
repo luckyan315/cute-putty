@@ -509,8 +509,9 @@ Terminal.DEFAULT_SGR_ATTR =
 			    break;
 			default:
 			    console.error('[BrowserIDE][CSI K]Unknown state:' + ps);
+			    break;
 			}
-
+			
 			break;
 		    case 'L':
 			//Inserts Ps lines, stgarting at the cursor. The default 1. 
@@ -1016,7 +1017,7 @@ Terminal.DEFAULT_SGR_ATTR =
     this.eraseLine = function(s, e){
 	var r = this.$cursor.y;
 	var _s = s;
-	var _e = e | Terminal.$nCol;
+	var _e = e || this.$nCol;
 	
 	for(var iCol= _s; iCol<_e; iCol++){
 	    this.$rows[r][iCol] = [' ', Terminal.DEFAULT_SGR_ATTR];
@@ -1031,8 +1032,14 @@ Terminal.DEFAULT_SGR_ATTR =
 	this.renderMatrix(r);
     };
 
+    //reverse fg/bg color
     this.reverseColor = function(attr){
-	
+	var char_type = attr & 0xf;
+	var fg = attr >> 4 & 0xf;
+	var bg = attr >> 8 & 0xf;
+	var bright = attr >> 12 & 1;
+
+	attr = bright << 12 | fg << 8 | bg << 4 | char_type;
     };
 
     this.clearEscParams = function(){
