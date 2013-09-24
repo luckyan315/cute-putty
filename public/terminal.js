@@ -151,9 +151,9 @@ function main(){
     term.send('\r');
     term.refreshCursor();
 
-    setInterval(function(){
-    	term.refreshCursor();
-    }, 1000);
+    // setInterval(function(){
+    // 	term.refreshCursor();
+    // }, 1000);
 }
 
 
@@ -364,6 +364,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    if(c>0){
 			c--;
 		    }
+		    break;
 		default:
 		    if( c >= this.$nCol ){
 			c = 0;
@@ -450,229 +451,254 @@ Terminal.DEFAULT_SGR_ATTR =
 		    this.$escParams.push(this.$curParam);
 		    this.$curParam = 0;
 		    break;
-		case 'A': 
-		    //CUU, Moves cursor up Ps lines in the same column. 
-		    break;
-		case 'B':
-		    //Moves cursor down Ps lines in the same column. 
-		    break;
-		case 'C':
-		    //Moves cursor to the right Ps columns. 
-		    break;
-		case 'D':
-		    //Moves cursor to the left Ps columns. 
-		    break;
-		case 'E':
-		    //Moves cursor to the first column of Ps-th following line. 
-		    break;
-		case 'F':
-		    //Moves cursor to the first column of Ps-th preceding line. 
-		    break;
-		case 'G':
-		    //Moves cursor to the Ps-th column of the active line. 
-		    break;
-		case 'H':
-		    //Moves cursor to the Ps1-th line and to the Ps2-th column. 
-		    break;
-		case 'I':
-		    //Moves cursor to the Ps tabs forward. 
-		    break;
-		case 'J':
-		    //Erase in display. The default value of Ps is 0.
-		    //Ps = 0      Erase from cursor through the end of the display.
-		    //   = 1      Erase from the beginning of the display through the cursor.
-		    //   = 2      Erase the complete of display.
-		    break;
-		case 'K':
-		    //Erase in line. The default value of Ps is 0.
-		    // Ps = 0      Erase from the cursor through the end of the line.
-		    //    = 1      Erase from the beginning of the line through the cursor.
-		    //    = 2      Erase the complete of line.
-		    
-		    break;
-		case 'L':
-		    //Inserts Ps lines, stgarting at the cursor. The default 1. 
-		    break;
-		case 'M':
-		    //Deletes Ps lines in the scrolling region, starting with the line
-		    //that has the cursor, the default 1.
-		    break;
-		case 'P':
-		    //Deletes Ps characters from the cursor position to the right.The default 1.
-		    break;
-		case 'S':
-		    //Scroll up Ps lines. The default 1.
-		    break;
-		case 'T':
-		    //Scroll down Ps lines. The default value of Ps is 1.
-		    break;
-		case 'X':
-		    //Erase Ps characters, from the cursor positioon to the right.The default 1.
-		    break;
-		case 'Z':
-		    //Moves cursor to the Ps tabs backward.The default 1.
-		    break;
-		case '\'': //single quote
-		    //Moves cursor to the Ps-th columns of the active line. The default 1.
-		    break;
-		case 'a':
-		    //Moves cursor to the right Ps columns.The default 1.
-		    break;
-		case 'c':
-		    // Primary Device Attribute. The default value of Ps is 0.
-		    // Ps = 0    Asks for the terminal's architectural class and basic attributes.
-		    // Response: Depends the Terminal ID setting.
-		    //   VT100     ESC [ ? 1 ; 2 c
-		    //   VT100J    ESC [ ? 5 ; 2 c
-		    //   VT101     ESC [ ? 1 ; 0 c
-		    //   VT102     ESC [ ? 6 c
-		    //   VT102J    ESC [ ? 15 c
-		    //   VT220J    ESC [ ? 62 ; 1 ; 2 ; 5 ; 6 ; 7 ; 8 c
-		    //   VT282     ESC [ ? 62 ; 1 ; 2 ; 4 ; 5 ; 6 ; 7 ; 8 ; 10 ; 11 c
-		    //   VT320     CSI ? 63 ; 1 ; 2 ; 6 ; 7 ; 8 c
-		    //   VT382     CSI ? 63 ; 1 ; 2 ; 4 ; 5 ; 6 ; 7 ; 8 ; 10 ; 15 c
-		    //   VT420     CSI ? 64 ; 1 ; 2 ; 7 ; 8 ; 9 ; 15 ; 18 ; 21 c"
-		    //   VT520     CSI ? 65 ; 1 ; 2 ; 7 ; 8 ; 9 ; 12 ; 18 ; 19 ; 21 ; 23 ; 24 ; 42 ; 44 ; 45 ; 46 c
-		    //   VT525     CSI ? 65 ; 1 ; 2 ; 7 ; 9 ; 12 ; 18 ; 19 ; 21 ; 22 ; 23 ; 24 ; 42 ; 44 ; 45 ; 46 c
-		    
-		    break;
-		case 'd':
-		    //Move to the corresponding vertical position(line Ps) of the current column.
-		    //The default value is 1.
-		    break;
-		case 'e':
-		    //Moves cursor down Ps lines in the same column.
-		    //The default value is 1.
-		    break;
-		case 'f':
-		    //Moves cursor to the Ps1-th line and to the Ps2-th column.
-		    //The default value is 1.
-		    break;
-		case 'g':
-		    //Clears the tab stop. The default value of Ps is 0.
-		    
-		    break;
-		case 'h':
- 		    //Sets mode, detail info go to file comment .
-		    
-		    break;
-		case 'i':
-		    //Priting mode
-		    //Ps = 0 Print screen
-		    //   = 4 Turn off printer controller mode.
-		    //   = 5 Turn on printer controller mode.
-		    break;
-		case 'j':
-		    //Moves cursor to the left Ps columns.
-		    //The default value is 1.
-		    break;
-		case 'k':
-		    //Moves cursor up Ps lines in the same column.
-		    //The default value is 1.
-		    break;
-		case 'l':
-		    //Resets mode
-		    break;
-		case 'm':
-		    //SGR, Character Atrributes, see more info at REF
+		default:
+		    //prepare params to be used
 		    this.$escParams.push(this.$curParam);
-		    this.setCharAttr();
+		    
+		    switch(ch){
+		    case 'A': 
+			//CUU, Moves cursor up Ps lines in the same column. 
+			break;
+		    case 'B':
+			//Moves cursor down Ps lines in the same column. 
+			break;
+		    case 'C':
+			//Moves cursor to the right Ps columns. 
+			break;
+		    case 'D':
+			//Moves cursor to the left Ps columns. 
+			break;
+		    case 'E':
+			//Moves cursor to the first column of Ps-th following line. 
+			break;
+		    case 'F':
+			//Moves cursor to the first column of Ps-th preceding line. 
+			break;
+		    case 'G':
+			//Moves cursor to the Ps-th column of the active line. 
+			break;
+		    case 'H':
+			//Moves cursor to the Ps1-th line and to the Ps2-th column. 
+			break;
+		    case 'I':
+			//Moves cursor to the Ps tabs forward. 
+			break;
+		    case 'J':
+			//Erase in display. The default value of Ps is 0.
+			//Ps = 0      Erase from cursor through the end of the display.
+			//   = 1      Erase from the beginning of the display through the cursor.
+			//   = 2      Erase the complete of display.
+			break;
+		    case 'K':
+			//Erase in line. The default value of Ps is 0.
+			// Ps = 0      Erase from the cursor through the end of the line.
+			//    = 1      Erase from the beginning of the line through the cursor.
+			//    = 2      Erase the complete of line.
+
+			var ps = this.$escParams[0];
+
+			switch(ps){
+			case 0:
+			    this.eraseLine(this.$cursor.x);
+			    break;
+			case 1:
+			    this.eraseLine(0, this.$cursor.x);
+			    break;
+			case 2:
+			    this.eraseLine(0);
+			    break;
+			default:
+			    console.error('[BrowserIDE][CSI K]Unknown state:' + ps);
+			}
+
+			break;
+		    case 'L':
+			//Inserts Ps lines, stgarting at the cursor. The default 1. 
+			break;
+		    case 'M':
+			//Deletes Ps lines in the scrolling region, starting with the line
+			//that has the cursor, the default 1.
+			break;
+		    case 'P':
+			//Deletes Ps characters from the cursor position to the right.The default 1.
+			break;
+		    case 'S':
+			//Scroll up Ps lines. The default 1.
+			break;
+		    case 'T':
+			//Scroll down Ps lines. The default value of Ps is 1.
+			break;
+		    case 'X':
+			//Erase Ps characters, from the cursor positioon to the right.The default 1.
+			break;
+		    case 'Z':
+			//Moves cursor to the Ps tabs backward.The default 1.
+			break;
+		    case '\'': //single quote
+			//Moves cursor to the Ps-th columns of the active line. The default 1.
+			break;
+		    case 'a':
+			//Moves cursor to the right Ps columns.The default 1.
+			break;
+		    case 'c':
+			// Primary Device Attribute. The default value of Ps is 0.
+			// Ps = 0    Asks for the terminal's architectural class and basic attributes.
+			// Response: Depends the Terminal ID setting.
+			//   VT100     ESC [ ? 1 ; 2 c
+			//   VT100J    ESC [ ? 5 ; 2 c
+			//   VT101     ESC [ ? 1 ; 0 c
+			//   VT102     ESC [ ? 6 c
+			//   VT102J    ESC [ ? 15 c
+			//   VT220J    ESC [ ? 62 ; 1 ; 2 ; 5 ; 6 ; 7 ; 8 c
+			//   VT282     ESC [ ? 62 ; 1 ; 2 ; 4 ; 5 ; 6 ; 7 ; 8 ; 10 ; 11 c
+			//   VT320     CSI ? 63 ; 1 ; 2 ; 6 ; 7 ; 8 c
+			//   VT382     CSI ? 63 ; 1 ; 2 ; 4 ; 5 ; 6 ; 7 ; 8 ; 10 ; 15 c
+			//   VT420     CSI ? 64 ; 1 ; 2 ; 7 ; 8 ; 9 ; 15 ; 18 ; 21 c"
+			//   VT520     CSI ? 65 ; 1 ; 2 ; 7 ; 8 ; 9 ; 12 ; 18 ; 19 ; 21 ; 23 ; 24 ; 42 ; 44 ; 45 ; 46 c
+			//   VT525     CSI ? 65 ; 1 ; 2 ; 7 ; 9 ; 12 ; 18 ; 19 ; 21 ; 22 ; 23 ; 24 ; 42 ; 44 ; 45 ; 46 c
+			
+			break;
+		    case 'd':
+			//Move to the corresponding vertical position(line Ps) of the current column.
+			//The default value is 1.
+			break;
+		    case 'e':
+			//Moves cursor down Ps lines in the same column.
+			//The default value is 1.
+			break;
+		    case 'f':
+			//Moves cursor to the Ps1-th line and to the Ps2-th column.
+			//The default value is 1.
+			break;
+		    case 'g':
+			//Clears the tab stop. The default value of Ps is 0.
+			
+			break;
+		    case 'h':
+ 			//Sets mode, detail info go to file comment .
+			
+			break;
+		    case 'i':
+			//Priting mode
+			//Ps = 0 Print screen
+			//   = 4 Turn off printer controller mode.
+			//   = 5 Turn on printer controller mode.
+			break;
+		    case 'j':
+			//Moves cursor to the left Ps columns.
+			//The default value is 1.
+			break;
+		    case 'k':
+			//Moves cursor up Ps lines in the same column.
+			//The default value is 1.
+			break;
+		    case 'l':
+			//Resets mode
+			break;
+		    case 'm':
+			//SGR, Character Atrributes, see more info at REF
+			this.setCharAttr();
+			break;
+		    case 'n':
+			//Reports device status
+			//Ps = 5  Request the terminal's operation status report.
+			//        Always return 'CSI 0 n' (Terminal).
+			//  =  6  Request cursor position report.
+			//        Response: CSI r; cR
+			//         r     Line number
+			//         c     Column number
+			
+			
+			break;
+		    case 'r':
+			//Set top and bottom margins.
+			//Ps1   Line number for the top margin.
+			//      The default value is 1.
+			//Ps2   Line number for the bottom margin.
+			//      The default value is number of lines per screen.
+			
+			break;
+		    case 's':
+			//| CSI s        | Save cursor position. Same as DECSC.SCP  |
+			//|              | only works when DECLRMM is reset.        |
+			//|--------------+------------------------------------------|
+			//| CSI Ps1;Ps2s | Set left and right margins. DECSLRM only |
+			//|              | works when DECLRMM is set                |
+			
+			break;
+		    case 't':
+			//Window manipulation.
+			//
+			// Ps1 =  1    De-iconify window.
+			//     =  2    Minimize window.
+			//     =  3    Move window to [Ps2, Ps3].
+			//     =  4    Resize window to height Ps2 pixels and width Ps3 pixels.
+			//     =  5    Raise the window to the top of the stacking order.
+			//     =  6    Lower the window to the bottom of the stacking order.
+			//     =  7    Refresh window.
+			//     =  8    Resize window to Ps2 lines and Ps3 columns.
+			//     =  9    Change maximize state of window.
+			//             Ps2 = 0    Restore maximized window.
+			//                 = 1    Maximize window.
+			//
+			//     = 11    Reports window state.
+			//             Response: CSI s t
+			//               s = 1    Normal. (non-iconified)
+			//                 = 2    Iconified.
+			//
+			//     = 13    Reports window position.
+			//             Response: CSI 3 ; x ; y t
+			//               x    X position of window.
+			//               y    Y position of window.
+			//
+			//     = 14    Reports window size in pixels.
+			//             Response: CSI 4 ; y ; x t
+			//               y    Window height in pixels.
+			//               x    Window width in pixels.
+			//
+			//     = 18    Reports terminal size in characters.
+			//             Response: CSI 8 ; y ; x t
+			//               y    Terminal height in characters. (Lines)
+			//               x    Terminal width in characters. (Columns)
+			//
+			//     = 19    Reports root window size in characters.
+			//             Response: CSI 9 ; y ; x t
+			//               y    Root window height in characters.
+			//               x    Root window width in characters.
+			//
+			//     = 20    Reports icon label.
+			//             Response: OSC L title ST
+			//               title    icon label. (window title)
+			//
+			//     = 21    Reports window title.
+			//             Response: OSC l title ST
+			//               title    Window title.
+			//     = 22    Save window title on stack.
+			//             Ps2 = 0, 1, 2    Save window title.
+			//     = 23    Restore window title from stack.
+			//             Ps2 = 0, 1, 2    Restore window title.
+
+			break;
+		    case 'u':
+			//Restore cursor position. Same as DECRC.
+			
+			break;
+		    case 'r':
+			//if csiParam[0] == '<' && csiParam.length == 2 : Restore cursor position.Same as DECRC.
+			
+			break;
+		    case 's':
+			//if csiParam[0] == '<' && csiParam.length == 2 : Restore IME open state.
+			
+			break;
+		    default:
+			console.error('[BrowserIDE][CSI]Unknown EOF :' + ch);
+		    }
+
+		    //
 		    this.clearEscParams();
 		    this.$parse_state = Terminal.COMMON;
-		    
 		    break;
-		case 'n':
-		    //Reports device status
-		    //Ps = 5  Request the terminal's operation status report.
-		    //        Always return 'CSI 0 n' (Terminal).
-		    //  =  6  Request cursor position report.
-		    //        Response: CSI r; cR
-		    //         r     Line number
-		    //         c     Column number
-		    
-		    
-		    break;
-		case 'r':
-		    //Set top and bottom margins.
-		    //Ps1   Line number for the top margin.
-		    //      The default value is 1.
-		    //Ps2   Line number for the bottom margin.
-		    //      The default value is number of lines per screen.
-		    
-		    break;
-		case 's':
-		    //| CSI s        | Save cursor position. Same as DECSC.SCP  |
-		    //|              | only works when DECLRMM is reset.        |
-		    //|--------------+------------------------------------------|
-		    //| CSI Ps1;Ps2s | Set left and right margins. DECSLRM only |
-		    //|              | works when DECLRMM is set                |
-		    
-		    break;
-		case 't':
-		    //Window manipulation.
-		    //
-		    // Ps1 =  1    De-iconify window.
-		    //     =  2    Minimize window.
-		    //     =  3    Move window to [Ps2, Ps3].
-		    //     =  4    Resize window to height Ps2 pixels and width Ps3 pixels.
-		    //     =  5    Raise the window to the top of the stacking order.
-		    //     =  6    Lower the window to the bottom of the stacking order.
-		    //     =  7    Refresh window.
-		    //     =  8    Resize window to Ps2 lines and Ps3 columns.
-		    //     =  9    Change maximize state of window.
-		    //             Ps2 = 0    Restore maximized window.
-		    //                 = 1    Maximize window.
-		    //
-		    //     = 11    Reports window state.
-		    //             Response: CSI s t
-		    //               s = 1    Normal. (non-iconified)
-		    //                 = 2    Iconified.
-		    //
-		    //     = 13    Reports window position.
-		    //             Response: CSI 3 ; x ; y t
-		    //               x    X position of window.
-		    //               y    Y position of window.
-		    //
-		    //     = 14    Reports window size in pixels.
-		    //             Response: CSI 4 ; y ; x t
-		    //               y    Window height in pixels.
-		    //               x    Window width in pixels.
-		    //
-		    //     = 18    Reports terminal size in characters.
-		    //             Response: CSI 8 ; y ; x t
-		    //               y    Terminal height in characters. (Lines)
-		    //               x    Terminal width in characters. (Columns)
-		    //
-		    //     = 19    Reports root window size in characters.
-		    //             Response: CSI 9 ; y ; x t
-		    //               y    Root window height in characters.
-		    //               x    Root window width in characters.
-		    //
-		    //     = 20    Reports icon label.
-		    //             Response: OSC L title ST
-		    //               title    icon label. (window title)
-		    //
-		    //     = 21    Reports window title.
-		    //             Response: OSC l title ST
-		    //               title    Window title.
-		    //     = 22    Save window title on stack.
-		    //             Ps2 = 0, 1, 2    Save window title.
-		    //     = 23    Restore window title from stack.
-		    //             Ps2 = 0, 1, 2    Restore window title.
-
-		    break;
-		case 'u':
-		    //Restore cursor position. Same as DECRC.
-		    
-		    break;
-		case 'r':
-		    //if csiParam[0] == '<' && csiParam.length == 2 : Restore cursor position.Same as DECRC.
-		    
-		    break;
-		case 's':
-		    //if csiParam[0] == '<' && csiParam.length == 2 : Restore IME open state.
-		    
-		    break; 
 		}
 
 		break; /* Terminal.CSI */
@@ -919,6 +945,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    iRow === this.$cursor.y &&
 		    iCol === this.$cursor.x){
 		    attr = 4 | attr;
+		    //reverse fg & bg color
 		    fg ^= bg;
 		    bg ^= fg;
 		    fg ^= bg;
@@ -985,6 +1012,17 @@ Terminal.DEFAULT_SGR_ATTR =
 	}
     };
 
+    //s(start pos), e(end pos)
+    this.eraseLine = function(s, e){
+	var r = this.$cursor.y;
+	var _s = s;
+	var _e = e | Terminal.$nCol;
+	
+	for(var iCol= _s; iCol<_e; iCol++){
+	    this.$rows[r][iCol] = [' ', Terminal.DEFAULT_SGR_ATTR];
+	}
+    };
+    
     this.refreshCursor = function(){
 	var r = this.$cursor.y;
 	var c = this.$cursor.x;
