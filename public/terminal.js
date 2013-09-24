@@ -33,9 +33,9 @@ function main(){
     term.send('\r');
     term.refreshCursor();
 
-    // setInterval(function(){
-    // 	term.refreshCursor();
-    // }, 1000);
+    setInterval(function(){
+    	term.refreshCursor();
+    }, 500);
 }
 
 
@@ -151,6 +151,87 @@ function Terminal(container, r, c){
 	case 27:
 	    //esc
 	    ch = '\x1b';
+	    break;
+        case 33:
+	    //Page Up key
+            break;
+	case 34:
+	    //page down key
+	    break;
+	case 35:
+	    //End key
+	    break;
+	case 36:
+	    //home key
+	    break;
+	case 37:
+	    //left arrow
+	    ch = '\x1b[D';
+	    break;
+	case 38:
+	    //up arrow
+	    ch = '\x1b[A';
+	    break;
+	case 39:
+	    //right arrow
+	    ch = '\x1b[C';
+	    break;
+	case 40:
+	    //down arrow
+	    ch = '\x1b[B';
+	    break;
+	case 44:
+	    //print screen key
+	    break;
+	case 45:
+	    //Ins(ert) key
+	    ch = '\x1b[2~';
+	    break;
+	case 46:
+	    //Del(ete) key
+	    ch = '\x1b[3~';
+	    break;
+	case 112:
+	    //F1
+	    break;
+	case 113:
+	    //F2
+	    break;
+	case 114:
+	    //F3
+	    break;
+	case 115:
+	    //F4
+	    break;
+	case 116:
+	    //F5
+	    break;
+	case 117:
+	    //F6
+	    break;
+	case 118:
+	    //F7
+	    break;
+	case 119:
+	    //F8
+	    break;
+	case 120:
+	    //F9
+	    break;
+	case 121:
+	    //F10
+	    break;
+	case 122:
+	    //F11
+	    break;
+	case 123:
+	    //F12
+	    break;
+	case 144:
+	    //Num Lock key
+	    break;
+	case 145:
+	    //Scroll Lock key
 	    break;
 	default:
 	    if( e.ctrlKey ){
@@ -854,7 +935,10 @@ Terminal.DEFAULT_SGR_ATTR =
 		var char_type = attr & 0xf;
 		var fg = attr >> 4 & 0xf;
 		var bg = attr >> 8 & 0xf;
-		var bright = attr >> 12 & 1;
+		//more good looking than dark, so ...
+		//use bright mode temporary while debuging...
+		var bright = 1; //var bright = attr >> 12 & 1; 
+
 		
 		// console.info('Row:' + iRow + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
 		
