@@ -344,16 +344,20 @@ Terminal.DEFAULT_SGR_ATTR =
 		    
 		    switch(ch){
 		    case 'A': 
-			//CUU, Moves cursor up Ps lines in the same column. 
+			//CUU, Moves cursor up Ps lines in the same column.
+			this.moveCursorUp(this.$escParams[0]);
 			break;
 		    case 'B':
-			//Moves cursor down Ps lines in the same column. 
+			//Moves cursor down Ps lines in the same column.
+			this.moveCursorDown(this.$escParams[0]);
 			break;
 		    case 'C':
-			//Moves cursor to the right Ps columns. 
+			//Moves cursor to the right Ps columns.
+			this.moveCursorRight(this.$escParams[0]);
 			break;
 		    case 'D':
-			//Moves cursor to the left Ps columns. 
+			//Moves cursor to the left Ps columns.
+			this.moveCursorLeft(this.$escParams[0]);
 			break;
 		    case 'E':
 			//Moves cursor to the first column of Ps-th following line. 
@@ -958,6 +962,49 @@ Terminal.DEFAULT_SGR_ATTR =
 	    this.eraseLine(isRow);
 	}
 	
+    };
+
+    this.moveCursorUp = function(n){
+	console.log('[BrowserIDE][CursorUp]:' + n);
+
+	this.$cursor.y -= 1;
+	
+	if( this.$cursor.y < 0 ){
+	    this.$cursor.y = 0
+	}
+
+    };
+
+    this.moveCursorDown = function(n){
+	console.log('[BrowserIDE][CursorDown]:' + n);
+
+	this.$cursor.y += 1;
+
+	if( this.$cursor.y >= this.$nRow ){
+	    this.$cursor.y = this.$nRow - 1;
+	}
+    };
+
+    this.moveCursorLeft = function(n){
+	console.log('[BrowserIDE][CursorLeft]:' + n);
+	
+	this.$cursor.x -= 1;
+
+	if( this.$cursor.x < 0 ){
+	    this.$cursor.x = 0;
+	}
+
+    };
+
+    this.moveCursorRight = function(n){
+	console.log('[BrowserIDE][CursorRight]:' + n);
+	
+	this.$cursor.x += 1;
+
+	if( this.$cursor.x >= this.$nCol ){
+	    this.$cursor.x = this.$nCol - 1;
+	}
+
     };
     
     this.refreshCursor = function(){
