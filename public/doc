@@ -2,6 +2,16 @@
  * Help doc
  */
 
+* REF:
+/**
+ * 
+ *      http://en.wikipedia.org/wiki/ANSI_escape_code
+ *      http://en.wikipedia.org/wiki/C0_and_C1_control_codes
+ *      http://en.wikipedia.org/wiki/Control_Sequence_Introducer#Sequence_elements
+ *      http://ttssh2.sourceforge.jp/manual/en/about/ctrlseq.html#CSI
+ */
+
+ 
 * Tip
  1. A quick check with escape sequence code
    |-------|
@@ -18,7 +28,7 @@
   
 
 
-  //Definitions
+* Definitions
   |----+---------------------------------------------------|
   | c  | The literal character c.                          |
   |----+---------------------------------------------------|
@@ -37,8 +47,9 @@
 
 
 
-  // Mode(Strandard)
+* Mode(Strandard)
 
+  |----------+----------+-----------------------------------------------+------------------------------|
   | Mode No. | Mnemoni  | Set(DECSET)                                   | Reset(DECRST)                |
   |        2 | KAM      | Locks the keyboard                            | Unlonks the keyboard         |
   |----------+----------+-----------------------------------------------+------------------------------|
@@ -61,7 +72,7 @@
   |----------+----------+-----------------------------------------------+------------------------------|
 
 
-  // Character Atrributes.(SGR)
+* Character Atrributes.(SGR)
 
   |--------------------+----------------------------------------------------------------------------------|
   |                No. | Attribute                                                                        |
@@ -131,10 +142,10 @@
   |                106 | Set background color to Bright Cyan. (Color No. 14)                              |
   |                107 | Set background color to Bright White. (Color No. 15)                             |
   |--------------------+----------------------------------------------------------------------------------|
- /
 
 
- // Modes (DEC/xterm specific)
+
+* Modes (DEC/xterm specific)
 |----------+---------------------------------+--------------------------------------------------------------+---------------------------------------------------|
 | Mode No. | Mnemonic                        | Set (DECSET)                                                 | Reset (DECRST)                                    |
 |----------+---------------------------------+--------------------------------------------------------------+---------------------------------------------------|

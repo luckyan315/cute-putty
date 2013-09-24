@@ -3,14 +3,6 @@
  * Copyright (c) 2013, guanglin.an (lucky315.an@gmail.com)
  */
 
-/**
- * REF:
- *      http://en.wikipedia.org/wiki/ANSI_escape_code
- *      http://en.wikipedia.org/wiki/C0_and_C1_control_codes
- *      http://en.wikipedia.org/wiki/Control_Sequence_Introducer#Sequence_elements
- *      http://ttssh2.sourceforge.jp/manual/en/about/ctrlseq.html#CSI
- */
-
 "use strict";
 
 function main(){
