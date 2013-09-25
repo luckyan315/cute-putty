@@ -36,7 +36,9 @@ function Terminal(container, r, c){
     
     this.$container = container | document.body;
     this.$root = null;
-    this.document = document;
+    this.$window = window;
+    this.$document = document;
+
     
     this.$nRow = r || Terminal.ROW;
     this.$nCol = c || Terminal.COL;
@@ -83,8 +85,16 @@ function Terminal(container, r, c){
     
     //initialize listeners
 
+    //adding the event listerner for Mozilla
+    if(window.addEventListener) {
+        document.addEventListener('DOMMouseScroll', _this.onMouseWheel.bind(_this), false);
+    }
+    
+    //for IE/OPERA etc
+    document.onmousewheel = _this.onMouseWheel.bind(_this);
+    
     //ascii ansi... digitals
-    this.document.onkeypress = function(e){
+    this.$document.onkeypress = function(e){
 
 	var keycode = 0;
 	var ch = null;
@@ -99,7 +109,7 @@ function Terminal(container, r, c){
     };
 
     //
-    this.document.onkeydown = function(e){
+    this.$document.onkeydown = function(e){
 	var keycode = 0;
 	var ch = null;
 	e = e || event;
@@ -514,9 +524,11 @@ Terminal.DEFAULT_SGR_ATTR =
 			break;
 		    case 'S':
 			//Scroll up Ps lines. The default 1.
+			console.log('[BrowserIDE][CSI S] Scroll up');
 			break;
 		    case 'T':
 			//Scroll down Ps lines. The default value of Ps is 1.
+			console.log('[BrowserIDE][CSI T] Scroll down');
 			break;
 		    case 'X':
 			//Erase Ps characters, from the cursor positioon to the right.The default 1.
@@ -783,11 +795,11 @@ Terminal.DEFAULT_SGR_ATTR =
     
     this.draw = function(){
 	var oRowDiv = null;
-	this.$root = this.document.createElement('div');
+	this.$root = this.$document.createElement('div');
 	this.$root.className = 'terminal';
 	
 	for(var i = 0; i < this.$nRow; i++) {
-	    oRowDiv = this.document.createElement('div');
+	    oRowDiv = this.$document.createElement('div');
 	    this.$root.appendChild(oRowDiv);
 	    this.$rowDivs.push(oRowDiv);
 	}
@@ -1069,7 +1081,6 @@ Terminal.DEFAULT_SGR_ATTR =
 	if( this.$cursor.x < 0 ){
 	    this.$cursor.x = 0;
 	}
-
     };
 
     this.moveCursorRight = function(n){
@@ -1080,7 +1091,6 @@ Terminal.DEFAULT_SGR_ATTR =
 	if( this.$cursor.x >= this.$nCol ){
 	    this.$cursor.x = this.$nCol - 1;
 	}
-
     };
     
     this.refreshCursor = function(){
@@ -1101,6 +1111,21 @@ Terminal.DEFAULT_SGR_ATTR =
 	attr = bright << 12 | fg << 8 | bg << 4 | char_type;
     };
 
+    this.onMouseWheel = function(e){
+	console.log('[BrowserIDE][Scroll]');
+	if( e.wheelDelta >= 0 ){
+	    //TODO: scroll up
+	    
+	    // this.send('\x1b[S'); //return BEl('\x07') 
+	} else {
+	    //TODO: scroll down
+	    
+	    // this.send('\x1b[T'); //return BEl('\x07')
+	}
+
+	stopBubbling(e);
+    };
+    
     this.clearEscParams = function(){
 	this.$curParam = 0;
 	this.$escParams = [];
