@@ -22,9 +22,10 @@ function main(){
     
     term.draw();
 
-    term.send('\r');
-    term.refreshCursor();
+    //try to get data from server, for test...
+    term.send('\r'); 
 
+    /* blink cursor */
     setInterval(function(){
     	term.refreshCursor();
     }, 500);
@@ -43,9 +44,9 @@ function Terminal(container, r, c){
     this.$nRow = r || Terminal.ROW;
     this.$nCol = c || Terminal.COL;
 
-    /* char content to be rendered */
+    /* internal model matrix to be rendered */
     this.$rows = [];
-    for(var i=0; i<this.$nRow; i++){
+    for(var i=0; i<Terminal.MAX_ROW; i++){
 	var row = []; //row
 	for(var j=0; j<this.$nCol; j++){
 	    row[j] = [' ', Terminal.DEFAULT_SGR_ATTR];
@@ -69,6 +70,13 @@ function Terminal(container, r, c){
 
     /* cursor blink state  */
     this.$blink_state = 0;
+
+    /* display zone of the matrix, b(begin), e(end) */
+    //Real row index of the matrix
+    this.$disp = {
+	b: 0,
+	e: this.$nRow - 1
+    };
     
     /* save parameters as parsing escape sequence */
     this.$escParams = [];
@@ -276,6 +284,10 @@ Terminal.OSC = 8; //ESC ],
 Terminal.ROW = 24;
 Terminal.COL = 80;
 
+//The max row of the model
+Terminal.MAX_ROW = 1000;
+Terminal.MAX_COL = 1000;
+
 //default SGR attributes
 Terminal.DEFAULT_BACKGROUND_COLOR = 9;
 Terminal.DEFAULT_FOREGROUND_COLOR = 7;
@@ -318,11 +330,21 @@ Terminal.DEFAULT_SGR_ATTR =
 		    //TODO: next tab pos
 		    break;
 		case '\n':
-		    this.$cursor.y++;
-		    if( this.$cursor.y >= this.$nRow -1 ){
-			this.$cursor.y = this.$nRow - 1;
-		    }
+		    //before disp range
+		    // this.$cursor.y++;
+		    // if( this.$cursor.y >= this.$nRow -1 ){
+		    // 	this.$cursor.y = this.$nRow - 1;
+		    // }
 
+		    //after disp range
+		    this.$cursor.y++;
+		    if( this.$cursor.y > this.$nRow - 1){
+			this.$cursor.y = this.$nRow - 1;
+			
+			this.$disp.b++;
+			this.$disp.e++;
+		    }
+		    
 		    break;
 		case '\r':
 		    this.$cursor.x = 0;
@@ -337,12 +359,26 @@ Terminal.DEFAULT_SGR_ATTR =
 			this.$cursor.x = 0;
 			this.$cursor.y++;
 
-			if( this.$cursor.y >= this.$nRow -1 ){
-			    this.$cursor.y = this.$nRow - 1;
-			}
+			//before disp range
+			// if( this.$cursor.y >= this.$nRow -1 ){
+			//     this.$cursor.y = this.$nRow - 1;
+			// }
 
+			//after disp range
+			if( this.$cursor.y > this.$disp.e ){
+			    this.$cursor.y = this.$nRow - 1;
+			    
+			    this.$disp.b++;
+			    this.$disp.e++;
+			}
 		    }
-		    this.$rows[this.$cursor.y][this.$cursor.x] = [ch, this.$curAttr];
+		    
+		    //before disp range
+		    // this.$rows[this.$cursor.y][this.$cursor.x] = [ch, this.$curAttr];
+
+		    //after disp range
+		    this.$rows[this.$cursor.y + this.$disp.b][this.$cursor.x] = [ch, this.$curAttr];
+		    
 		    this.$cursor.x++;
 		};
 		break; /* Terminal.COMMON */
@@ -472,14 +508,15 @@ Terminal.DEFAULT_SGR_ATTR =
 
 			switch(ps){
 			case 0:
-			    this.eraseDisplay(this.$cursor, {x: this.$nCol-1, y: this.$nRow-1});
+			    this.eraseDisplay(this.$cursor, {x: this.$nCol-1, y: this.$disp.b + this.$nRow-1});
 			    break;
 			case 1:
-			    this.eraseDisplay({x:0,y:0}, this.$cursor);
+			    this.eraseDisplay({x:0,y:0}, {x: this.$cursor.x, y: this.$disp.b + this.$cursor.y});
 			    break;
 			case 2:
-			    this.eraseDisplay({x:0,y:0}, {x: this.$nCol-1, y: this.$nRow-1});
-			    this.renderMatrix(0, this.$nRow-1);
+			    this.eraseDisplay({x:0,y:0}, {x: this.$nCol-1, y: this.$disp.b + this.$nRow-1});
+			    // this.renderMatrix(0, this.$nRow-1);
+			    this.renderMatrix(this.$disp.b, this.$disp.e);
 			    this.$cursor.x = 0;
 			    this.$cursor.y = 0;
 			    break;
@@ -790,7 +827,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	    // this.$rows[this.$curline].innerHTML += ch;
 	}
 	
-	this.renderMatrix(0, this.$cursor.y);
+	this.renderMatrix(this.$disp.b, this.$disp.e);
     };
     
     this.draw = function(){
@@ -920,13 +957,15 @@ Terminal.DEFAULT_SGR_ATTR =
     //rStart[0,~](row start pos), rEnd[~, this.$nRow-1](row end pos)
     this.renderMatrix = function(rStart, rEnd){
 	// var r = this.$cursor.y;
-	var iRow = 0;
+	var iRow = 0; //real row index of matrix model
+	var iRowDiv = 0; //row index of the Divs
 	
 	if( rStart ){
 	    iRow = rStart;
+	    iRowDiv = rStart;
 	}
 	
-	for(; iRow <= rEnd; iRow++){
+	for(; iRow <= rEnd; iRow++, iRowDiv++){
 	    var preAttr = Terminal.DEFAULT_SGR_ATTR;
 	    var htmlStart = '';
 	    var bSpanOpen = false;
@@ -944,11 +983,11 @@ Terminal.DEFAULT_SGR_ATTR =
 		var bright = 1; //var bright = attr >> 12 & 1; 
 
 		
-		// console.info('Row:' + iRow + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
+		// console.info('Row:' + iRowDiv + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
 		
 		if( this.$showCursor &&
 		    this.$blink_state &&
-		    iRow === this.$cursor.y &&
+		    iRowDiv === this.$cursor.y &&
 		    iCol === this.$cursor.x){
 		    attr = 4 | attr;
 		    //reverse fg & bg color
@@ -1008,9 +1047,12 @@ Terminal.DEFAULT_SGR_ATTR =
 	    if( preAttr !== Terminal.DEFAULT_SGR_ATTR ){
 		htmlStart += '</span>';
 	    }
-	    this.$rowDivs[iRow].innerHTML = htmlStart;
 
-	    // console.info('[BrowserIDE][Render][Row:'+ iRow +']' + htmlStart);
+	    if( this.$rowDivs[iRowDiv] ){
+		this.$rowDivs[iRowDiv].innerHTML = htmlStart;
+	    }
+
+	    // console.info('[BrowserIDE][Render][Row:'+ iRowDiv +']' + htmlStart);
 	}
 
 	if( this.$container ){
@@ -1094,11 +1136,9 @@ Terminal.DEFAULT_SGR_ATTR =
     };
     
     this.refreshCursor = function(){
-	var r = this.$cursor.y;
-	var c = this.$cursor.x;
 	this.$showCursor = 1;
 	this.$blink_state ^= 1;
-	this.renderMatrix(r, r);
+	this.renderMatrix(this.$disp.b + this.$cursor.y, this.$disp.b + this.$cursor.y);
     };
 
     //reverse fg/bg color
@@ -1112,17 +1152,31 @@ Terminal.DEFAULT_SGR_ATTR =
     };
 
     this.onMouseWheel = function(e){
-	console.log('[BrowserIDE][Scroll]');
+	// console.info('[BrowserIDE][Scroll]');
 	if( e.wheelDelta >= 0 ){
 	    //TODO: scroll up
+	    
+	    this.$disp.b--;
+	    this.$disp.e--;
+	    if( this.$disp.b < 0 ){
+		this.$disp.b = 0;
+		this.$disp.e++;
+	    }
 	    
 	    // this.send('\x1b[S'); //return BEl('\x07') 
 	} else {
 	    //TODO: scroll down
+	    this.$disp.b++;
+	    this.$disp.e++;
+	    if( this.$disp.e > Terminal.MAX_ROW -1 ){
+		this.$disp.b--;
+		this.$disp.e--;
+	    }
 	    
 	    // this.send('\x1b[T'); //return BEl('\x07')
 	}
 
+	this.renderMatrix(this.$disp.b, this.$disp.e);
 	stopBubbling(e);
     };
     
