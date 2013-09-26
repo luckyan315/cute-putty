@@ -330,17 +330,13 @@ Terminal.DEFAULT_SGR_ATTR =
 		    //TODO: next tab pos
 		    break;
 		case '\n':
-		    //before disp range
-		    // this.$cursor.y++;
-		    // if( this.$cursor.y >= this.$nRow -1 ){
-		    // 	this.$cursor.y = this.$nRow - 1;
-		    // }
-
-		    //after disp range
+		    //refresh cursor
 		    this.$cursor.y++;
+
 		    if( this.$cursor.y > this.$nRow - 1){
 			this.$cursor.y = this.$nRow - 1;
-			
+
+			//move down display matrix
 			this.$disp.b++;
 			this.$disp.e++;
 		    }
@@ -355,28 +351,20 @@ Terminal.DEFAULT_SGR_ATTR =
 		    }
 		    break;
 		default:
-		    if( this.$cursor.x >= this.$nCol-1 ){
+		    if( this.$cursor.x > this.$nCol-1 ){
+			//refresh cursor
 			this.$cursor.x = 0;
 			this.$cursor.y++;
-
-			//before disp range
-			// if( this.$cursor.y >= this.$nRow -1 ){
-			//     this.$cursor.y = this.$nRow - 1;
-			// }
-
-			//after disp range
-			if( this.$cursor.y > this.$disp.e ){
+			
+			if( this.$cursor.y > this.$nRow - 1 ){
 			    this.$cursor.y = this.$nRow - 1;
-			    
+
+			    //move down display matrix
 			    this.$disp.b++;
 			    this.$disp.e++;
 			}
 		    }
-		    
-		    //before disp range
-		    // this.$rows[this.$cursor.y][this.$cursor.x] = [ch, this.$curAttr];
 
-		    //after disp range
 		    this.$rows[this.$cursor.y + this.$disp.b][this.$cursor.x] = [ch, this.$curAttr];
 		    
 		    this.$cursor.x++;
@@ -508,17 +496,20 @@ Terminal.DEFAULT_SGR_ATTR =
 
 			switch(ps){
 			case 0:
-			    this.eraseDisplay(this.$cursor, {x: this.$nCol-1, y: this.$disp.b + this.$nRow-1});
+			    this.eraseDisplay(this.$cursor, {x: this.$nCol-1, y: this.$disp.b + this.$cursor.y});
 			    break;
 			case 1:
 			    this.eraseDisplay({x:0,y:0}, {x: this.$cursor.x, y: this.$disp.b + this.$cursor.y});
 			    break;
 			case 2:
-			    this.eraseDisplay({x:0,y:0}, {x: this.$nCol-1, y: this.$disp.b + this.$nRow-1});
-			    // this.renderMatrix(0, this.$nRow-1);
-			    this.renderMatrix(this.$disp.b, this.$disp.e);
+			    this.eraseDisplay({x:0,y:0}, {x: this.$nCol-1, y: this.$disp.e});
 			    this.$cursor.x = 0;
 			    this.$cursor.y = 0;
+
+			    this.$disp.b = 0;
+			    this.$disp.e = this.$nRow - 1;
+			    this.renderMatrix(0, this.$nRow-1);
+			    
 			    break;
 			default:
 			    console.error('[BrowserIDE][CSI J]Unknown state:' + ps);
@@ -535,13 +526,13 @@ Terminal.DEFAULT_SGR_ATTR =
 
 			switch(ps){
 			case 0:
-			    this.eraseLine(this.$cursor.y, this.$cursor.x);
+			    this.eraseLine(this.$disp.b + this.$cursor.y, this.$cursor.x);
 			    break;
 			case 1:
-			    this.eraseLine(this.$cursor.y, 0, this.$cursor.x);
+			    this.eraseLine(this.$disp.b + this.$cursor.y, 0, this.$cursor.x);
 			    break;
 			case 2:
-			    this.eraseLine(this.$cursor.y, 0);
+			    this.eraseLine(this.$disp.b + this.$cursor.y, 0);
 			    break;
 			default:
 			    console.error('[BrowserIDE][CSI K]Unknown state:' + ps);
@@ -803,29 +794,13 @@ Terminal.DEFAULT_SGR_ATTR =
 		    
 		}
 		
-		// if( isDigit(ch) ){
-		//     //0 < ch < 9
-		//     this.$curParam = this.$curParam * 10 + ch.charCodeAt(0) - 48;
-		// }
-		
 		break; /* Terminal.OSC */
 	    default:
-
-	    }
+		//nothing
+		
+	    } /* end of switch(this.$parse_state) */
 	    
-	    // switch(ch){
-	    // case '\r':
-	    // 	ch = '';
-	    // 	break;
-	    // case '\n':
-	    // 	this.$curline++;
-	    // 	this.$cursor.y++;
-	    // 	ch='';
-	    // 	break;
-	    // }
-	    
-	    // this.$rows[this.$curline].innerHTML += ch;
-	}
+	} /* end of for(var i=0; i<content.length; i++) */
 	
 	this.renderMatrix(this.$disp.b, this.$disp.e);
     };
@@ -962,7 +937,6 @@ Terminal.DEFAULT_SGR_ATTR =
 	
 	if( rStart ){
 	    iRow = rStart;
-	    iRowDiv = rStart;
 	}
 	
 	for(; iRow <= rEnd; iRow++, iRowDiv++){
@@ -981,14 +955,14 @@ Terminal.DEFAULT_SGR_ATTR =
 		//more good looking than dark, so ...
 		//use bright mode temporary while debuging...
 		var bright = 1; //var bright = attr >> 12 & 1; 
-
 		
 		// console.info('Row:' + iRowDiv + ' Col:' + iCol + ' ch:' + ch + ' attr:' + attr);
 		
 		if( this.$showCursor &&
 		    this.$blink_state &&
-		    iRowDiv === this.$cursor.y &&
+		    iRow === (this.$disp.b + this.$cursor.y) &&
 		    iCol === this.$cursor.x){
+		    //
 		    attr = 4 | attr;
 		    //reverse fg & bg color
 		    fg ^= bg;
@@ -998,6 +972,10 @@ Terminal.DEFAULT_SGR_ATTR =
 			'style="' +
 			'color:' + Terminal.COLOR[fg][0] + ';' +
 			'background:' + Terminal.COLOR[bg][0] + ';' + '">';
+		    if( rStart === rEnd ){
+			iRowDiv = this.$cursor.y;
+		    }
+
 		} else {
 		    if( attr !== preAttr ){
 			if( preAttr !== Terminal.DEFAULT_SGR_ATTR ){
@@ -1155,6 +1133,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	// console.info('[BrowserIDE][Scroll]');
 	if( e.wheelDelta >= 0 ){
 	    //TODO: scroll up
+	    this.$cursor++;
 	    
 	    this.$disp.b--;
 	    this.$disp.e--;
@@ -1166,6 +1145,8 @@ Terminal.DEFAULT_SGR_ATTR =
 	    // this.send('\x1b[S'); //return BEl('\x07') 
 	} else {
 	    //TODO: scroll down
+	    this.$cursor--;
+	    
 	    this.$disp.b++;
 	    this.$disp.e++;
 	    if( this.$disp.e > Terminal.MAX_ROW -1 ){
