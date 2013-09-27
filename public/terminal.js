@@ -1133,7 +1133,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	// console.info('[BrowserIDE][Scroll]');
 	if( e.wheelDelta >= 0 ){
 	    //TODO: scroll up
-	    this.$cursor++;
+	    this.$cursor.y++;
 	    
 	    this.$disp.b--;
 	    this.$disp.e--;
@@ -1145,7 +1145,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	    // this.send('\x1b[S'); //return BEl('\x07') 
 	} else {
 	    //TODO: scroll down
-	    this.$cursor--;
+	    this.$cursor.y--;
 	    
 	    this.$disp.b++;
 	    this.$disp.e++;
