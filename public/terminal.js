@@ -937,6 +937,10 @@ Terminal.DEFAULT_SGR_ATTR =
 	
 	if( rStart ){
 	    iRow = rStart;
+
+            if( rStart === rEnd ){
+		iRowDiv = this.$cursor.y;
+	    }
 	}
 	
 	for(; iRow <= rEnd; iRow++, iRowDiv++){
@@ -972,9 +976,6 @@ Terminal.DEFAULT_SGR_ATTR =
 			'style="' +
 			'color:' + Terminal.COLOR[fg][0] + ';' +
 			'background:' + Terminal.COLOR[bg][0] + ';' + '">';
-		    if( rStart === rEnd ){
-			iRowDiv = this.$cursor.y;
-		    }
 
 		} else {
 		    if( attr !== preAttr ){
@@ -1000,7 +1001,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    ch = '&nbsp';
 		    break;
 		case '<':
-		    ch = '&lt;'
+		    ch = '&lt;';
 		    break;
 		case '>':
 		    ch = '&gt;';
@@ -1133,7 +1134,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	// console.info('[BrowserIDE][Scroll]');
 	if( e.wheelDelta >= 0 ){
 	    //TODO: scroll up
-	    this.$cursor++;
+	    this.$cursor.y++;
 	    
 	    this.$disp.b--;
 	    this.$disp.e--;
@@ -1145,7 +1146,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	    // this.send('\x1b[S'); //return BEl('\x07') 
 	} else {
 	    //TODO: scroll down
-	    this.$cursor--;
+	    this.$cursor.y--;
 	    
 	    this.$disp.b++;
 	    this.$disp.e++;
