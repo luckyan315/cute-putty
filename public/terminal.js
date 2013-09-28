@@ -88,6 +88,8 @@ function Terminal(container, r, c){
     this.$escParams = [];
     // this.$oscParams = [];
     this.$curParam = 0;
+    /* e.g: CSI ? Pm i */
+    this.$isCsiQuestionMarked = false;
     
     this.$curAttr = Terminal.DEFAULT_SGR_ATTR;
     
@@ -443,6 +445,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		case '?':
 		    //TODO: csi ?
+		    this.$isCsiQuestionMarked = true;
 		    break;
 		case '>':
 		    //TODO: csi >
@@ -619,7 +622,13 @@ Terminal.DEFAULT_SGR_ATTR =
 			break;
 		    case 'h':
  			//Sets mode, detail info go to file comment .
+			if( this.$isCsiQuestionMarked ){
+			    this.setDECMode(this.$escParams);
+			} else {
+			    console.error('[BrowserIDE][CSI ? Pm h]Exception sequence happend!,There is not question mark!');
+			}
 			
+
 			break;
 		    case 'i':
 			//Priting mode
@@ -784,7 +793,7 @@ Terminal.DEFAULT_SGR_ATTR =
 			    this.$window_title = this.$escParams[1];
 			    break;
 			default:
-			    console.error('[BrowserIDE][OSC][BEL]Unknown Ps Param: ' + this.$escParam[0] + 'Maybe need to update [OSC][BEL] parser!');
+			    console.error('[BrowserIDE][OSC][BEL]Unknown Ps Param: ' + this.$escParams[0] + 'Maybe need to update [OSC][BEL] parser!');
 			    break;
 			}
 
@@ -807,7 +816,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		
 		break; /* Terminal.OSC */
 	    default:
-		//nothing
+		//ignore
 		
 	    } /* end of switch(this.$parse_state) */
 	    
@@ -1172,10 +1181,130 @@ Terminal.DEFAULT_SGR_ATTR =
 	this.renderMatrix(this.$disp.b, this.$disp.e);
 	stopBubbling(e);
     };
+
+    this.setDECMode = function(params){
+	for(var i=0; i<params.length; i++){
+	    var mode = params[i];
+
+	    switch(mode){
+	    case 1:
+		//[DECCKM] Application cursor keys
+		break;
+	    case 3:
+		//[DECCOLM] 132 column mode. 
+		break;
+	    case 5:
+		//[DECSCNM] Reverse video mode
+		break;
+	    case 6:
+		//[DECOM]
+		// Enable origin mode.
+		// - The home cursor position is at the upper-left corner of ther screen, with in the margins.
+		// - The starting point for line numbers depends on the current top margin setting.
+		// - The cursor cannot move outside of the margins.
+		break;
+	    case 7:
+		//[DECAWM] Enables autowrap mode
+		break;
+	    case 8:
+		//[DECARM] Auto-repeat keys
+		break;
+	    case 9:
+		//[XT_MSE_X10] Enables X10 mouse tracking. Send mouse X & Y on button press
+		break;
+	    case 12:
+		//[XT_CBLINK] Blinking cursor
+		break;
+	    case 19:
+		//[DECPEX] Set print extent to full screen
+		
+		break;
+	    case 25:
+		//[DECTCEM] Show cursor
+		
+		break;
+	    case 38:
+		//[DECTEK]  Switch to TEK window
+		//ignore
+		break;
+	    case 47:
+		//[XT_ALTSCRN] Switch to alternate screen buffer
+		
+		break;
+	    case 59:
+		//[DECKKDM] Kanji terminal mode
+		break;
+	    case 66:
+		//[DECNKM] Application keypad mode.  Numeric keypad mode.
+		break;
+	    case 67:
+		//[DECBKM] Backspace key sends BS.
+		//Backspace key sends DEL.
+		break;
+	    case 69:
+		//[DECLRMM] enable left and right margins.
+		//DECSLRM can set margins. SCP can not save cursor position.
+		break;
+	    case 1000:
+		//[XT_MSE_X11] enable normal mouse tracking.
+		//X & Y on button press and release.
+		break;
+	    case 1002:
+		//[XT_MSE_BTN] enables button-event mouse tracking.
+		//Essentially same as normal mouse tracing mode.
+		//but also reports button-motion event.
+		break;
+	    case 1003:
+		//[XT_MSE_ANY] enables any-event mouse tracking.
+		//same as button-event mode, except that all motion events
+		//are reported, even if no mouse button is down.
+		
+		break;
+	    case 1004:
+		//[XT_MSE_WIN] enables focus reporting mode.
+		
+		break;
+	    case 1005:
+		//[XT_MSE_UTF] enables xterm(UTF-8) style extended mouse reporting format.
+		break;
+	    case 1006:
+		//[XT_MSE_SGR] enables xterm (SGR) style extended mouse reporting format.
+		
+		break;
+	    case 1015:
+		//[-] enables rxvt-unicode style extended mouse reporting format.
+		break;
+	    case 1047:
+		//[XT_ALTS_47] Switch to alterate screen buffer
+		break;
+	    case 1048:
+		//[XT_ALTS_48] save cursor position
+		break;
+	    case 1049:
+		//[XT_EXTSCRN] save cursor position, switch to alternate screen buffer
+		//and clear screen.
+		console.error('[BrowserIDE][1049] detacted!');
+		break;
+	    case 2004:
+		//[RL_BRACKET] enables bracketed paste mode
+		break;
+	    case 7727:
+		//[-] enables application escape mode
+		break;
+	    case 7786:
+		//[-] enables mouse wheel - cursorkey translation.
+		break;
+	    default:
+		//
+		console.error('[BrowserIDE][SETDEC]Unknown DEC Mode number:' + mode);
+	    }
+	}
+    };
     
     this.clearEscParams = function(){
 	this.$curParam = 0;
 	this.$escParams = [];
+	this.$isCsiQuestionMarked = false;
     };
     
     //send data to server

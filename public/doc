@@ -2,6 +2,13 @@
  * Help doc
  */
 
+* TODO Task
+  1. dyamic add/rm dom (while move matrix) 
+  2. add scroll button 
+  3. Partial rendering (by row ? or col ?)
+
+ 
+ 
 * REF:
 /**
  * 
