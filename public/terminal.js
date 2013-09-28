@@ -25,10 +25,7 @@ function main(){
     //try to get data from server, for test...
     term.send('\r'); 
 
-    /* blink cursor */
-    setInterval(function(){
-    	term.refreshCursor();
-    }, 500);
+
 }
 
 
@@ -90,13 +87,17 @@ function Terminal(container, r, c){
     this.$curParam = 0;
     /* e.g: CSI ? Pm i */
     this.$isCsiQuestionMarked = false;
+    /* e.gl: CSI ? 0 h */
+    this.$isApplication = false;
     
     this.$curAttr = Terminal.DEFAULT_SGR_ATTR;
     
     this.$parse_state = Terminal.COMMON;
+    /* context buffer to save screen status  */
+    this.$contextBuffer = null;
     
     this.$window_title = '';
-    
+        
     var _this = this;
     
     //initialize listeners
@@ -160,7 +161,7 @@ function Terminal(container, r, c){
 	    break;
 	case 17:
 	    //control
-	    
+
 	    break;
 	case 18:
 	    //alt
@@ -184,19 +185,35 @@ function Terminal(container, r, c){
 	    break;
 	case 37:
 	    //left arrow
-	    ch = '\x1b[D';
+	    if( this.$isApplication ){
+		ch = '\x1bOD';
+	    } else {
+		ch = '\x1b[D';
+	    }
 	    break;
 	case 38:
 	    //up arrow
-	    ch = '\x1b[A';
+	    if( this.$isApplication ){
+		ch = '\x1bOA';
+	    }else {
+		ch = '\x1b[A';
+	    }
 	    break;
 	case 39:
 	    //right arrow
-	    ch = '\x1b[C';
+	    if( this.$isApplication ){
+		ch = '\x1bOC';
+	    }else {
+		ch = '\x1b[C';
+	    }
 	    break;
 	case 40:
 	    //down arrow
-	    ch = '\x1b[B';
+	    if( this.$isApplication ){
+		ch = '\x1bOB';
+	    }else {
+		ch = '\x1b[B';
+	    }
 	    break;
 	case 44:
 	    //print screen key
@@ -211,15 +228,19 @@ function Terminal(container, r, c){
 	    break;
 	case 112:
 	    //F1
+	    ch = '\x1bOP';
 	    break;
 	case 113:
 	    //F2
+	    ch = '\x1bOQ';
 	    break;
 	case 114:
 	    //F3
+	    ch = '\x1bOR';
 	    break;
 	case 115:
 	    //F4
+	    ch = '\x1bOS';
 	    break;
 	case 116:
 	    //F5
@@ -466,6 +487,13 @@ Terminal.DEFAULT_SGR_ATTR =
 		    this.$escParams.push(this.$curParam);
 		    
 		    switch(ch){
+		    case '@':
+			//Insert Ps space (SP) characters starting at the cursor position.
+			//The default value of Ps is 1
+			var param = this.$escParams[0] === 0 ? 1 : this.$escParams[0];
+			
+			this.insertSpaces(param);
+			break;
 		    case 'A': 
 			//CUU, Moves cursor up Ps lines in the same column.
 			this.moveCursorUp(this.$escParams[0]);
@@ -840,6 +868,12 @@ Terminal.DEFAULT_SGR_ATTR =
 	    this.$container = document.body;
 	    this.$container.appendChild(this.$root);
 	}
+
+	var _this = this;
+	/* blink cursor */
+	setInterval(function(){
+    	    _this.refreshCursor();
+	}, 500);
     };  
 
     this.setCharAttr = function(){
@@ -1188,7 +1222,8 @@ Terminal.DEFAULT_SGR_ATTR =
 
 	    switch(mode){
 	    case 1:
-		//[DECCKM] Application cursor keys
+		//[DECCKM] Application cursor keys, more detail see doc file
+		this.$isApplication = true;
 		break;
 	    case 3:
 		//[DECCOLM] 132 column mode. 
@@ -1283,7 +1318,26 @@ Terminal.DEFAULT_SGR_ATTR =
 	    case 1049:
 		//[XT_EXTSCRN] save cursor position, switch to alternate screen buffer
 		//and clear screen.
-		console.error('[BrowserIDE][1049] detacted!');
+		var contextBuffer = {
+		    cursor_x: this.$cursor.x,
+		    cursor_y: this.$cursor.y,
+		    disp_b: this.$disp.b,
+		    disp_e: this.$disp.e,
+		    rows: this.$rows
+		};
+		//remove previous context
+		parent = this.$root.parentNode;
+		if (parent){
+		    parent.removeChild(this.$root);
+		}
+		
+		//reset terminal
+		Terminal.call(this, this.$container);
+		this.$contextBuffer = contextBuffer;
+		this.draw();
+		this.renderMatrix(0, this.$nRow - 1);
+		
+		this.$parse_state = Terminal.COMMON;
 		break;
 	    case 2004:
 		//[RL_BRACKET] enables bracketed paste mode
@@ -1298,6 +1352,18 @@ Terminal.DEFAULT_SGR_ATTR =
 		//
 		console.error('[BrowserIDE][SETDEC]Unknown DEC Mode number:' + mode);
 	    }
+	}
+    };
+
+    this.insertSpaces = function(param){
+	var r = this.$disp.b + this.$cursor.y;
+	var iCol = this.$cursor.x;
+	var nSpaces = param;
+	var chSpace = [Terminal.DEFAULT_SGR_ATTR, ' '];
+	
+	for(var i=0; i<nSpaces && iCol < this.$nCol; i++, iCol++){
+	    this.$rows[r].splice(iCol, 0, chSpace);
+	    this.$rows[r].pop();
 	}
     };
     
