@@ -71,13 +71,19 @@ function Terminal(container, r, c){
     /* cursor blink state  */
     this.$blink_state = 0;
 
-    /* display zone of the matrix, b(begin), e(end) */
+    /* display zone of the matrix, b(begin row), e(end row) */
     //Real row index of the matrix
     this.$disp = {
 	b: 0,
 	e: this.$nRow - 1
     };
-    
+
+    /* range of refreshing matrix, b(begin row), e(end row) */
+    this.$refresh = {
+	b: 0,
+	e: 0
+    };
+  
     /* save parameters as parsing escape sequence */
     this.$escParams = [];
     // this.$oscParams = [];
@@ -248,6 +254,10 @@ function Terminal(container, r, c){
 		if (e.keyCode >= 65 && e.keyCode <= 90) {
 		    ch = String.fromCharCode(e.keyCode - 64);
 		}
+	    } else if(e.altKey){
+		if( e.keyCode >= 65 && e.keyCode <= 90 ){
+		    ch = '\x1b' + String.fromCharCode(e.keyCode + 32);
+		}
 	    }
 
 	}
@@ -316,6 +326,8 @@ Terminal.DEFAULT_SGR_ATTR =
 	var content = data;
 	
 	this.$parse_state = this.$parse_state || Terminal.COMMON;
+	this.$refresh.b = this.$cursor.y;
+	this.$refresh.e = this.$cursor.y;
 	
 	for(var i=0; i<content.length; i++){
 	    var ch = content[i];
@@ -328,11 +340,12 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		case '\t':
 		    //TODO: next tab pos
+		    
 		    break;
 		case '\n':
 		    //refresh cursor
 		    this.$cursor.y++;
-
+		    
 		    if( this.$cursor.y > this.$nRow - 1){
 			this.$cursor.y = this.$nRow - 1;
 
@@ -790,8 +803,6 @@ Terminal.DEFAULT_SGR_ATTR =
 			//handle 2nd param Pt(text string)
 			this.$curParam += ch;
 		    }
-		    
-		    
 		}
 		
 		break; /* Terminal.OSC */
