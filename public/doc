@@ -2,6 +2,14 @@
  * Help doc
  */
 
+* TODO Task
+  1. dyamic add/rm dom (while move matrix) 
+  2. add scroll button 
+  3. Partial rendering (by row ? or col ?)
+  4. support resize window
+     
+ 
+ 
 * REF:
 /**
  * 
@@ -9,6 +17,7 @@
  *      http://en.wikipedia.org/wiki/C0_and_C1_control_codes
  *      http://en.wikipedia.org/wiki/Control_Sequence_Introducer#Sequence_elements
  *      http://ttssh2.sourceforge.jp/manual/en/about/ctrlseq.html#CSI
+ *      http://www.inwap.com/pdp10/ansicode.txt
  *      https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
  */
 
@@ -223,6 +232,39 @@
 |----------+---------------------------------+--------------------------------------------------------------+---------------------------------------------------|
 
 
+Minimum requirements for VT100 emulation:
+
+1) To act as a passive display, implement the 4 cursor commands, the 2 erase
+   commands, direct cursor addressing, and at least inverse characters.
+   The software should be capable of handling strings with 16 numeric parameters
+   with values in the range of 0 to 255.
+
+  [A      Move cursor up one row, stop if a top of screen
+  [B      Move cursor down one row, stop if at bottom of screen
+  [C      Move cursor forward one column, stop if at right edge of screen
+  [D      Move cursor backward one column, stop if at left edge of screen
+  [H      Home to row 1 column 1 (also [1;1H)
+  [J      Clear from current position to bottom of screen
+  [K      Clear from current position to end of line
+  [24;80H Position to line 24 column 80 (any line 1 to 24, any column 1 to 132)
+  [0m     Clear attributes to normal characters
+  [7m     Add the inverse video attribute to succeeding characters
+  [0;7m   Set character attributes to inverse video only
+
+2) To enter data in VT100 mode, implement the 4 cursor keys and the 4 PF keys.
+   It must be possible to enter ESC, TAB, BS, DEL, and LF from the keyboard.
+
+  [A       Sent by the up-cursor key (alternately ESC O A)
+  [B       Sent by the down-cursor key (alternately ESC O B)
+  [C       Sent by the right-cursor key (alternately ESC O C)
+  [D       Sent by the left-cursor key (alternately ESC O D)
+  OP       PF1 key sends ESC O P
+  OQ       PF2 key sends ESC O Q
+  OR       PF3 key sends ESC O R
+  OS       PF3 key sends ESC O S
+  [c       Request for the terminal to identify itself
+  [?1;0c   VT100 with memory for 24 by 80, inverse video character attribute
+  [?1;2c   VT100 capable of 132 column mode, with bold+blink+underline+inverse
 
 
 

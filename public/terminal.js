@@ -25,10 +25,7 @@ function main(){
     //try to get data from server, for test...
     term.send('\r'); 
 
-    /* blink cursor */
-    setInterval(function(){
-    	term.refreshCursor();
-    }, 500);
+
 }
 
 
@@ -71,24 +68,36 @@ function Terminal(container, r, c){
     /* cursor blink state  */
     this.$blink_state = 0;
 
-    /* display zone of the matrix, b(begin), e(end) */
+    /* display zone of the matrix, b(begin row), e(end row) */
     //Real row index of the matrix
     this.$disp = {
 	b: 0,
 	e: this.$nRow - 1
     };
-    
+
+    /* range of refreshing matrix, b(begin row), e(end row) */
+    this.$refresh = {
+	b: 0,
+	e: 0
+    };
+  
     /* save parameters as parsing escape sequence */
     this.$escParams = [];
     // this.$oscParams = [];
     this.$curParam = 0;
+    /* e.g: CSI ? Pm i */
+    this.$isCsiQuestionMarked = false;
+    /* e.gl: CSI ? 0 h */
+    this.$isApplication = false;
     
     this.$curAttr = Terminal.DEFAULT_SGR_ATTR;
     
     this.$parse_state = Terminal.COMMON;
+    /* context buffer to save screen status  */
+    this.$contextBuffer = null;
     
     this.$window_title = '';
-    
+        
     var _this = this;
     
     //initialize listeners
@@ -152,7 +161,7 @@ function Terminal(container, r, c){
 	    break;
 	case 17:
 	    //control
-	    
+
 	    break;
 	case 18:
 	    //alt
@@ -176,19 +185,35 @@ function Terminal(container, r, c){
 	    break;
 	case 37:
 	    //left arrow
-	    ch = '\x1b[D';
+	    if( this.$isApplication ){
+		ch = '\x1bOD';
+	    } else {
+		ch = '\x1b[D';
+	    }
 	    break;
 	case 38:
 	    //up arrow
-	    ch = '\x1b[A';
+	    if( this.$isApplication ){
+		ch = '\x1bOA';
+	    }else {
+		ch = '\x1b[A';
+	    }
 	    break;
 	case 39:
 	    //right arrow
-	    ch = '\x1b[C';
+	    if( this.$isApplication ){
+		ch = '\x1bOC';
+	    }else {
+		ch = '\x1b[C';
+	    }
 	    break;
 	case 40:
 	    //down arrow
-	    ch = '\x1b[B';
+	    if( this.$isApplication ){
+		ch = '\x1bOB';
+	    }else {
+		ch = '\x1b[B';
+	    }
 	    break;
 	case 44:
 	    //print screen key
@@ -203,15 +228,19 @@ function Terminal(container, r, c){
 	    break;
 	case 112:
 	    //F1
+	    ch = '\x1bOP';
 	    break;
 	case 113:
 	    //F2
+	    ch = '\x1bOQ';
 	    break;
 	case 114:
 	    //F3
+	    ch = '\x1bOR';
 	    break;
 	case 115:
 	    //F4
+	    ch = '\x1bOS';
 	    break;
 	case 116:
 	    //F5
@@ -247,6 +276,10 @@ function Terminal(container, r, c){
 	    if( e.ctrlKey ){
 		if (e.keyCode >= 65 && e.keyCode <= 90) {
 		    ch = String.fromCharCode(e.keyCode - 64);
+		}
+	    } else if(e.altKey){
+		if( e.keyCode >= 65 && e.keyCode <= 90 ){
+		    ch = '\x1b' + String.fromCharCode(e.keyCode + 32);
 		}
 	    }
 
@@ -316,6 +349,8 @@ Terminal.DEFAULT_SGR_ATTR =
 	var content = data;
 	
 	this.$parse_state = this.$parse_state || Terminal.COMMON;
+	this.$refresh.b = this.$cursor.y;
+	this.$refresh.e = this.$cursor.y;
 	
 	for(var i=0; i<content.length; i++){
 	    var ch = content[i];
@@ -328,11 +363,12 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		case '\t':
 		    //TODO: next tab pos
+		    
 		    break;
 		case '\n':
 		    //refresh cursor
 		    this.$cursor.y++;
-
+		    
 		    if( this.$cursor.y > this.$nRow - 1){
 			this.$cursor.y = this.$nRow - 1;
 
@@ -430,6 +466,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		case '?':
 		    //TODO: csi ?
+		    this.$isCsiQuestionMarked = true;
 		    break;
 		case '>':
 		    //TODO: csi >
@@ -450,6 +487,13 @@ Terminal.DEFAULT_SGR_ATTR =
 		    this.$escParams.push(this.$curParam);
 		    
 		    switch(ch){
+		    case '@':
+			//Insert Ps space (SP) characters starting at the cursor position.
+			//The default value of Ps is 1
+			var param = this.$escParams[0] === 0 ? 1 : this.$escParams[0];
+			
+			this.insertSpaces(param);
+			break;
 		    case 'A': 
 			//CUU, Moves cursor up Ps lines in the same column.
 			this.moveCursorUp(this.$escParams[0]);
@@ -606,7 +650,13 @@ Terminal.DEFAULT_SGR_ATTR =
 			break;
 		    case 'h':
  			//Sets mode, detail info go to file comment .
+			if( this.$isCsiQuestionMarked ){
+			    this.setDECMode(this.$escParams);
+			} else {
+			    console.error('[BrowserIDE][CSI ? Pm h]Exception sequence happend!,There is not question mark!');
+			}
 			
+
 			break;
 		    case 'i':
 			//Priting mode
@@ -771,7 +821,7 @@ Terminal.DEFAULT_SGR_ATTR =
 			    this.$window_title = this.$escParams[1];
 			    break;
 			default:
-			    console.error('[BrowserIDE][OSC][BEL]Unknown Ps Param: ' + this.$escParam[0] + 'Maybe need to update [OSC][BEL] parser!');
+			    console.error('[BrowserIDE][OSC][BEL]Unknown Ps Param: ' + this.$escParams[0] + 'Maybe need to update [OSC][BEL] parser!');
 			    break;
 			}
 
@@ -790,13 +840,11 @@ Terminal.DEFAULT_SGR_ATTR =
 			//handle 2nd param Pt(text string)
 			this.$curParam += ch;
 		    }
-		    
-		    
 		}
 		
 		break; /* Terminal.OSC */
 	    default:
-		//nothing
+		//ignore
 		
 	    } /* end of switch(this.$parse_state) */
 	    
@@ -820,6 +868,12 @@ Terminal.DEFAULT_SGR_ATTR =
 	    this.$container = document.body;
 	    this.$container.appendChild(this.$root);
 	}
+
+	var _this = this;
+	/* blink cursor */
+	setInterval(function(){
+    	    _this.refreshCursor();
+	}, 500);
     };  
 
     this.setCharAttr = function(){
@@ -937,6 +991,10 @@ Terminal.DEFAULT_SGR_ATTR =
 	
 	if( rStart ){
 	    iRow = rStart;
+
+            if( rStart === rEnd ){
+		iRowDiv = this.$cursor.y;
+	    }
 	}
 	
 	for(; iRow <= rEnd; iRow++, iRowDiv++){
@@ -972,9 +1030,6 @@ Terminal.DEFAULT_SGR_ATTR =
 			'style="' +
 			'color:' + Terminal.COLOR[fg][0] + ';' +
 			'background:' + Terminal.COLOR[bg][0] + ';' + '">';
-		    if( rStart === rEnd ){
-			iRowDiv = this.$cursor.y;
-		    }
 
 		} else {
 		    if( attr !== preAttr ){
@@ -1000,7 +1055,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    ch = '&nbsp';
 		    break;
 		case '<':
-		    ch = '&lt;'
+		    ch = '&lt;';
 		    break;
 		case '>':
 		    ch = '&gt;';
@@ -1160,10 +1215,162 @@ Terminal.DEFAULT_SGR_ATTR =
 	this.renderMatrix(this.$disp.b, this.$disp.e);
 	stopBubbling(e);
     };
+
+    this.setDECMode = function(params){
+	for(var i=0; i<params.length; i++){
+	    var mode = params[i];
+
+	    switch(mode){
+	    case 1:
+		//[DECCKM] Application cursor keys, more detail see doc file
+		this.$isApplication = true;
+		break;
+	    case 3:
+		//[DECCOLM] 132 column mode. 
+		break;
+	    case 5:
+		//[DECSCNM] Reverse video mode
+		break;
+	    case 6:
+		//[DECOM]
+		// Enable origin mode.
+		// - The home cursor position is at the upper-left corner of ther screen, with in the margins.
+		// - The starting point for line numbers depends on the current top margin setting.
+		// - The cursor cannot move outside of the margins.
+		break;
+	    case 7:
+		//[DECAWM] Enables autowrap mode
+		break;
+	    case 8:
+		//[DECARM] Auto-repeat keys
+		break;
+	    case 9:
+		//[XT_MSE_X10] Enables X10 mouse tracking. Send mouse X & Y on button press
+		break;
+	    case 12:
+		//[XT_CBLINK] Blinking cursor
+		break;
+	    case 19:
+		//[DECPEX] Set print extent to full screen
+		
+		break;
+	    case 25:
+		//[DECTCEM] Show cursor
+		
+		break;
+	    case 38:
+		//[DECTEK]  Switch to TEK window
+		//ignore
+		break;
+	    case 47:
+		//[XT_ALTSCRN] Switch to alternate screen buffer
+		
+		break;
+	    case 59:
+		//[DECKKDM] Kanji terminal mode
+		break;
+	    case 66:
+		//[DECNKM] Application keypad mode.  Numeric keypad mode.
+		break;
+	    case 67:
+		//[DECBKM] Backspace key sends BS.
+		//Backspace key sends DEL.
+		break;
+	    case 69:
+		//[DECLRMM] enable left and right margins.
+		//DECSLRM can set margins. SCP can not save cursor position.
+		break;
+	    case 1000:
+		//[XT_MSE_X11] enable normal mouse tracking.
+		//X & Y on button press and release.
+		break;
+	    case 1002:
+		//[XT_MSE_BTN] enables button-event mouse tracking.
+		//Essentially same as normal mouse tracing mode.
+		//but also reports button-motion event.
+		break;
+	    case 1003:
+		//[XT_MSE_ANY] enables any-event mouse tracking.
+		//same as button-event mode, except that all motion events
+		//are reported, even if no mouse button is down.
+		
+		break;
+	    case 1004:
+		//[XT_MSE_WIN] enables focus reporting mode.
+		
+		break;
+	    case 1005:
+		//[XT_MSE_UTF] enables xterm(UTF-8) style extended mouse reporting format.
+		break;
+	    case 1006:
+		//[XT_MSE_SGR] enables xterm (SGR) style extended mouse reporting format.
+		
+		break;
+	    case 1015:
+		//[-] enables rxvt-unicode style extended mouse reporting format.
+		break;
+	    case 1047:
+		//[XT_ALTS_47] Switch to alterate screen buffer
+		break;
+	    case 1048:
+		//[XT_ALTS_48] save cursor position
+		break;
+	    case 1049:
+		//[XT_EXTSCRN] save cursor position, switch to alternate screen buffer
+		//and clear screen.
+		var contextBuffer = {
+		    cursor_x: this.$cursor.x,
+		    cursor_y: this.$cursor.y,
+		    disp_b: this.$disp.b,
+		    disp_e: this.$disp.e,
+		    rows: this.$rows
+		};
+		//remove previous context
+		parent = this.$root.parentNode;
+		if (parent){
+		    parent.removeChild(this.$root);
+		}
+		
+		//reset terminal
+		Terminal.call(this, this.$container);
+		this.$contextBuffer = contextBuffer;
+		this.draw();
+		this.renderMatrix(0, this.$nRow - 1);
+		
+		this.$parse_state = Terminal.COMMON;
+		break;
+	    case 2004:
+		//[RL_BRACKET] enables bracketed paste mode
+		break;
+	    case 7727:
+		//[-] enables application escape mode
+		break;
+	    case 7786:
+		//[-] enables mouse wheel - cursorkey translation.
+		break;
+	    default:
+		//
+		console.error('[BrowserIDE][SETDEC]Unknown DEC Mode number:' + mode);
+	    }
+	}
+    };
+
+    this.insertSpaces = function(param){
+	var r = this.$disp.b + this.$cursor.y;
+	var iCol = this.$cursor.x;
+	var nSpaces = param;
+	var chSpace = [Terminal.DEFAULT_SGR_ATTR, ' '];
+	
+	for(var i=0; i<nSpaces && iCol < this.$nCol; i++, iCol++){
+	    this.$rows[r].splice(iCol, 0, chSpace);
+	    this.$rows[r].pop();
+	}
+    };
     
     this.clearEscParams = function(){
 	this.$curParam = 0;
 	this.$escParams = [];
+	this.$isCsiQuestionMarked = false;
     };
     
     //send data to server
