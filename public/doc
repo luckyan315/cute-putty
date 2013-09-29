@@ -7,6 +7,7 @@
   2. add scroll button 
   3. Partial rendering (by row ? or col ?)
   4. support resize window
+  5. support M-'d' , C-'/' hot-key
      
  
  
