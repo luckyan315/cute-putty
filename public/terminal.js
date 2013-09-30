@@ -858,10 +858,17 @@ Terminal.DEFAULT_SGR_ATTR =
 		//Scroll Lock key
 		break;
 	    default:
+		//https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
+		//http://en.wikipedia.org/wiki/C0_and_C1_control_codes
+		//Seq watch: Run 'od -c' via terminal
 		if( e.ctrlKey ){
 		    if (e.keyCode >= 65 && e.keyCode <= 90) {
 			ch = String.fromCharCode(e.keyCode - 64);
+		    } else if(e.keyCode === 191 ){
+			//Slash ("/") key.
+			ch = String.fromCharCode(31); //^_
 		    }
+		    
 		} else if(e.altKey){
 		    if( e.keyCode >= 65 && e.keyCode <= 90 ){
 			ch = '\x1b' + String.fromCharCode(e.keyCode + 32);
