@@ -673,10 +673,11 @@ Terminal.DEFAULT_SGR_ATTR =
 	    this.$rowDivs.push(oRowDiv);
 	}
 
-	if( this.$container == false){
+	if( !this.$container ){
 	    this.$container = document.body;
-	    this.$container.appendChild(this.$root);
 	}
+
+	this.$container.appendChild(this.$root);
 
 	var _this = this;
 
@@ -696,196 +697,8 @@ Terminal.DEFAULT_SGR_ATTR =
 	document.onmousewheel = _this.onMouseWheel.bind(_this);
 	
 	//ascii ansi... digitals
-	this.$document.onkeypress = function(e){
-
-	    var keycode = 0;
-	    var ch = null;
-	    e = e || event;
-	    
-	    keycode = e.keyCode || e.which || e.charCode;
-	    
-	    ch = String.fromCharCode(keycode);
-	    _this.send(ch);
-	    stopBubbling(e);
-	    // console.info(String.fromCharCode(keycode) + ' keycode: ' + keycode);
-	};
-
-	//
-	this.$document.onkeydown = function(e){
-	    var keycode = 0;
-	    var ch = null;
-	    e = e || event;
-	    
-	    keycode = e.keyCode || e.which || e.charCode;
-	    
-	    switch(keycode){
-	    case 3:
-		//cancel
-
-		break;
-	    case 6:
-		//help
-		
-		break;
-	    case 8:
-		//backspace
-		if( e.altKey ){
-		    ch = '\x1b' + String.fromCharCode(8);
-		}else {
-		    ch = '\x7f';
-		}
-		
-		break;
-	    case 9:
-		//tab
-		ch = '\t';
-		break;
-	    case 13:
-		//Return/Enter key
-		ch = '\r';
-		break;
-	    case 16:
-		//shift
-		
-		break;
-	    case 17:
-		//control
-
-		break;
-	    case 18:
-		//alt
-		
-		break;
-	    case 27:
-		//esc
-		ch = '\x1b';
-		break;
-            case 33:
-		//Page Up key
-		break;
-	    case 34:
-		//page down key
-		break;
-	    case 35:
-		//End key
-		break;
-	    case 36:
-		//home key
-		break;
-	    case 37:
-		//left arrow
-		if( this.$isApplication ){
-		    ch = '\x1bOD';
-		} else {
-		    ch = '\x1b[D';
-		}
-		break;
-	    case 38:
-		//up arrow
-		if( this.$isApplication ){
-		    ch = '\x1bOA';
-		}else {
-		    ch = '\x1b[A';
-		}
-		break;
-	    case 39:
-		//right arrow
-		if( this.$isApplication ){
-		    ch = '\x1bOC';
-		}else {
-		    ch = '\x1b[C';
-		}
-		break;
-	    case 40:
-		//down arrow
-		if( this.$isApplication ){
-		    ch = '\x1bOB';
-		}else {
-		    ch = '\x1b[B';
-		}
-		break;
-	    case 44:
-		//print screen key
-		break;
-	    case 45:
-		//Ins(ert) key
-		ch = '\x1b[2~';
-		break;
-	    case 46:
-		//Del(ete) key
-		ch = '\x1b[3~';
-		break;
-	    case 112:
-		//F1
-		ch = '\x1bOP';
-		break;
-	    case 113:
-		//F2
-		ch = '\x1bOQ';
-		break;
-	    case 114:
-		//F3
-		ch = '\x1bOR';
-		break;
-	    case 115:
-		//F4
-		ch = '\x1bOS';
-		break;
-	    case 116:
-		//F5
-		break;
-	    case 117:
-		//F6
-		break;
-	    case 118:
-		//F7
-		break;
-	    case 119:
-		//F8
-		break;
-	    case 120:
-		//F9
-		break;
-	    case 121:
-		//F10
-		break;
-	    case 122:
-		//F11
-		break;
-	    case 123:
-		//F12
-		break;
-	    case 144:
-		//Num Lock key
-		break;
-	    case 145:
-		//Scroll Lock key
-		break;
-	    default:
-		//https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
-		//http://en.wikipedia.org/wiki/C0_and_C1_control_codes
-		//Seq watch: Run 'od -c' via terminal
-		if( e.ctrlKey ){
-		    if (e.keyCode >= 65 && e.keyCode <= 90) {
-			ch = String.fromCharCode(e.keyCode - 64);
-		    } else if(e.keyCode === 191 ){
-			//Slash ("/") key.
-			ch = String.fromCharCode(31); //^_
-		    }
-		    
-		} else if(e.altKey){
-		    if( e.keyCode >= 65 && e.keyCode <= 90 ){
-			ch = '\x1b' + String.fromCharCode(e.keyCode + 32);
-		    } 
-		}
-
-	    }
-
-	    if( ch ){
-		_this.send(ch);
-		stopBubbling(e);
-	    }
-	};
+	document.onkeypress = _this.onKeyPress.bind(_this);
+	document.onkeydown = _this.onKeyDown.bind(_this);
     };  
 
     this.setCharAttr = function(){
@@ -1392,6 +1205,195 @@ Terminal.DEFAULT_SGR_ATTR =
 	}
     };
 
+    this.onKeyPress = function(e){
+	var keycode = 0;
+	var ch = null;
+	e = e || event;
+	
+	keycode = e.keyCode || e.which || e.charCode;
+	
+	ch = String.fromCharCode(keycode);
+	this.send(ch);
+	stopBubbling(e);
+    };
+
+    this.onKeyDown = function(e){
+	var keycode = 0;
+	var ch = null;
+	e = e || event;
+	
+	keycode = e.keyCode || e.which || e.charCode;
+	
+	switch(keycode){
+	case 3:
+	    //cancel
+
+	    break;
+	case 6:
+	    //help
+	    
+	    break;
+	case 8:
+	    //backspace
+	    if( e.altKey ){
+		ch = '\x1b' + String.fromCharCode(8);
+	    }else {
+		ch = '\x7f';
+	    }
+	    
+	    break;
+	case 9:
+	    //tab
+	    ch = '\t';
+	    break;
+	case 13:
+	    //Return/Enter key
+	    ch = '\r';
+	    break;
+	case 16:
+	    //shift
+	    
+	    break;
+	case 17:
+	    //control
+
+	    break;
+	case 18:
+	    //alt
+	    
+	    break;
+	case 27:
+	    //esc
+	    ch = '\x1b';
+	    break;
+        case 33:
+	    //Page Up key
+	    break;
+	case 34:
+	    //page down key
+	    break;
+	case 35:
+	    //End key
+	    break;
+	case 36:
+	    //home key
+	    break;
+	case 37:
+	    //left arrow
+	    if( this.$isApplication ){
+		ch = '\x1bOD';
+	    } else {
+		ch = '\x1b[D';
+	    }
+	    break;
+	case 38:
+	    //up arrow
+	    if( this.$isApplication ){
+		ch = '\x1bOA';
+	    }else {
+		ch = '\x1b[A';
+	    }
+	    break;
+	case 39:
+	    //right arrow
+	    if( this.$isApplication ){
+		ch = '\x1bOC';
+	    }else {
+		ch = '\x1b[C';
+	    }
+	    break;
+	case 40:
+	    //down arrow
+	    if( this.$isApplication ){
+		ch = '\x1bOB';
+	    }else {
+		ch = '\x1b[B';
+	    }
+	    break;
+	case 44:
+	    //print screen key
+	    break;
+	case 45:
+	    //Ins(ert) key
+	    ch = '\x1b[2~';
+	    break;
+	case 46:
+	    //Del(ete) key
+	    ch = '\x1b[3~';
+	    break;
+	case 112:
+	    //F1
+	    ch = '\x1bOP';
+	    break;
+	case 113:
+	    //F2
+	    ch = '\x1bOQ';
+	    break;
+	case 114:
+	    //F3
+	    ch = '\x1bOR';
+	    break;
+	case 115:
+	    //F4
+	    ch = '\x1bOS';
+	    break;
+	case 116:
+	    //F5
+	    break;
+	case 117:
+	    //F6
+	    break;
+	case 118:
+	    //F7
+	    break;
+	case 119:
+	    //F8
+	    break;
+	case 120:
+	    //F9
+	    break;
+	case 121:
+	    //F10
+	    break;
+	case 122:
+	    //F11
+	    break;
+	case 123:
+	    //F12
+	    break;
+	case 144:
+	    //Num Lock key
+	    break;
+	case 145:
+	    //Scroll Lock key
+	    break;
+	default:
+	    //https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
+	    //http://en.wikipedia.org/wiki/C0_and_C1_control_codes
+	    //Seq watch: Run 'od -c' via terminal
+	    if( e.ctrlKey ){
+		if (e.keyCode >= 65 && e.keyCode <= 90) {
+		    ch = String.fromCharCode(e.keyCode - 64);
+		} else if(e.keyCode === 191 ){
+		    //Slash ("/") key.
+		    ch = String.fromCharCode(31); //^_
+		}
+		
+	    } else if(e.altKey){
+		if( e.keyCode >= 65 && e.keyCode <= 90 ){
+		    ch = '\x1b' + String.fromCharCode(e.keyCode + 32);
+		} 
+	    }
+
+	}
+
+	if( ch ){
+	    this.send(ch);
+	    stopBubbling(e);
+	}
+
+    }; /* end of onkeydown */
+    
     this.clearEscParams = function(){
 	this.$curParam = 0;
 	this.$escParams = [];
