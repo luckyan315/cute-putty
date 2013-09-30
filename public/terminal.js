@@ -729,7 +729,11 @@ Terminal.DEFAULT_SGR_ATTR =
 		break;
 	    case 8:
 		//backspace
-		ch = '\x7f';
+		if( e.altKey ){
+		    ch = '\x1b' + String.fromCharCode(8);
+		}else {
+		    ch = '\x7f';
+		}
 		
 		break;
 	    case 9:
@@ -872,7 +876,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		} else if(e.altKey){
 		    if( e.keyCode >= 65 && e.keyCode <= 90 ){
 			ch = '\x1b' + String.fromCharCode(e.keyCode + 32);
-		    }
+		    } 
 		}
 
 	    }
