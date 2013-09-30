@@ -400,6 +400,8 @@ Terminal.DEFAULT_SGR_ATTR =
 			break;
 		    case 'P':
 			//Deletes Ps characters from the cursor position to the right.The default 1.
+			var ps = this.$escParams[0];
+			this.deleteChars(ps);
 			break;
 		    case 'S':
 			//Scroll up Ps lines. The default 1.
@@ -1366,6 +1368,19 @@ Terminal.DEFAULT_SGR_ATTR =
 	}
     };
     
+    //Deletes Ps characters from the cursor position to the right.The default 1.
+    this.deleteChars = function(param){
+	var r = this.$disp.b + this.$cursor.y;
+	var iCol = this.$cursor.x;
+	var nChars = param;
+	var chSpace = [' ', Terminal.DEFAULT_SGR_ATTR];
+	
+	for(var i=0; i<nChars && iCol < this.$nCol; i++, iCol++){
+	    this.$rows[r].splice(this.$cursor.x, 1);
+	    this.$rows[r].push(chSpace);
+	}
+    };
+
     this.clearEscParams = function(){
 	this.$curParam = 0;
 	this.$escParams = [];
