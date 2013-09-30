@@ -7,10 +7,15 @@
   2. add scroll button 
   3. Partial rendering (by row ? or col ?)
   4. support resize window
-  5. support M-'d' , C-'/' hot-key
-     
- 
- 
+  5. support mouse common operation & context menu (copy , paste)
+
+
+
+* DONE Task
+   1. support M-'d' , C-'/' hot-key
+
+
+
 * REF:
 /**
  * 
