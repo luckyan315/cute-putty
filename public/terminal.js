@@ -32,11 +32,10 @@ function main(){
 function Terminal(r, c){
     EventEmitter.call(this);
     
-    this.$container = document.body;
-    this.$root = null;
-    this.$window = window;
-    this.$document = document;
-
+    this.$container = this.$container || document.body;
+    this.$root;
+    this.$window = this.$window || window;
+    this.$document = this.$document || document;
     
     this.$nRow = r || Terminal.ROW;
     this.$nCol = c || Terminal.COL;
@@ -52,7 +51,7 @@ function Terminal(r, c){
     }
 
     /* row divs */
-    this.$rowDivs = [];
+    this.$rowDivs;
     
     /* line nums received from server */
     this.$curline = 0;
@@ -87,6 +86,8 @@ function Terminal(r, c){
     this.$curParam = 0;
     /* e.g: CSI ? Pm i */
     this.$isCsiQuestionMarked = false;
+    /* e.g: CSI > Ps c */
+    this.$isCsiGtMarked = false;
     /* e.gl: CSI ? 0 h */
     this.$isApplication = false;
     
@@ -245,7 +246,17 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		case '\x07':
 		    //bell
-		    
+		    this.$parse_state = Terminal.COMMON;
+		    break;
+		case '=':
+		    //using application keypad mode
+		    this.$isApplicationKeypad = true;
+		    this.$parse_state = Terminal.COMMON;
+		    break;
+		case '>':
+		    // using normal keypad mode
+		    this.$isApplicationKeypad = false;
+		    this.$parse_state = Terminal.COMMON;
 		    break;
 		default:
 		    //
@@ -277,6 +288,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		case '>':
 		    //TODO: csi >
+		    this.$isCsiGtMarked = true;
 		    break;
 		case '$':
 		    //TODO: csi $
@@ -328,9 +340,26 @@ Terminal.DEFAULT_SGR_ATTR =
 			break;
 		    case 'H':
 			//Moves cursor to the Ps1-th line and to the Ps2-th column.
-			this.$cursor.x = this.$escParams[1] || 0;
-			this.$cursor.y = this.$escParams[0] || 0;
+			//default is (1st row, 1st col)
+			
+			var r = this.$escParams[0] ? this.$escParams[0] - 1 : 0;
+			var c = this.$escParams[1] ? this.$escParams[1] - 1 : 0;
 
+			if( r < 0 ){
+			    r = 0;
+			} else if (r >= this.$nRow){
+			    r = this.$nRow - 1;
+			}
+
+			if( c < 0 ){
+			    c = 0;
+			} else if( c >= this.$nCol ){
+			    c = this.$nCol - 1;
+			}
+
+			this.$cursor.x = c;
+			this.$cursor.y = r;
+			
 			// console.info('[BrowserIDE][CSI H]Row:' + this.$cursor.y + ' Col:' + this.$cursor.x);
 
 			break; /* end of case 'H' */
@@ -483,6 +512,12 @@ Terminal.DEFAULT_SGR_ATTR =
 			break;
 		    case 'l':
 			//Resets mode
+			if( this.$isCsiQuestionMarked ){
+			    this.resetDECMode(this.$escParams);
+			}else {
+			    console.error('[BrowserIDE][CSI ? Pm l]Exception sequence happend!,There is not question mark!');
+			}
+
 			break;
 		    case 'm':
 			//SGR, Character Atrributes, see more info at REF
@@ -505,7 +540,7 @@ Terminal.DEFAULT_SGR_ATTR =
 			//      The default value is 1.
 			//Ps2   Line number for the bottom margin.
 			//      The default value is number of lines per screen.
-			
+			this.setMatrixMargin();
 			break;
 		    case 's':
 			//| CSI s        | Save cursor position. Same as DECSC.SCP  |
@@ -666,6 +701,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	var oRowDiv = null;
 	this.$root = this.$document.createElement('div');
 	this.$root.className = 'terminal';
+	this.$rowDivs = [];
 	
 	for(var i = 0; i < this.$nRow; i++) {
 	    oRowDiv = this.$document.createElement('div');
@@ -819,6 +855,12 @@ Terminal.DEFAULT_SGR_ATTR =
 
             if( rStart === rEnd ){
 		iRowDiv = this.$cursor.y;
+	    } else if((rEnd - rStart) >= this.$nRow / 2 ){
+		//remove previous context
+		// var bodyNode = this.$root.parentNode;
+		// if (bodyNode){
+		//     bodyNode.removeChild(this.$root);
+		// }
 	    }
 	}
 	
@@ -954,8 +996,9 @@ Terminal.DEFAULT_SGR_ATTR =
 
     this.moveCursorUp = function(n){
 	console.log('[BrowserIDE][CursorUp]:' + n);
+	n = n === 0 ? 1 : n;
 
-	this.$cursor.y -= 1;
+	this.$cursor.y -= n;
 	
 	if( this.$cursor.y < 0 ){
 	    this.$cursor.y = 0;
@@ -966,7 +1009,9 @@ Terminal.DEFAULT_SGR_ATTR =
     this.moveCursorDown = function(n){
 	console.log('[BrowserIDE][CursorDown]:' + n);
 
-	this.$cursor.y += 1;
+	n = n === 0 ? 1 : n;
+
+	this.$cursor.y += n;
 
 	if( this.$cursor.y >= this.$nRow ){
 	    this.$cursor.y = this.$nRow - 1;
@@ -975,8 +1020,10 @@ Terminal.DEFAULT_SGR_ATTR =
 
     this.moveCursorLeft = function(n){
 	console.log('[BrowserIDE][CursorLeft]:' + n);
+
+	n = n === 0 ? 1 : n;
 	
-	this.$cursor.x -= 1;
+	this.$cursor.x -= n;
 
 	if( this.$cursor.x < 0 ){
 	    this.$cursor.x = 0;
@@ -985,8 +1032,10 @@ Terminal.DEFAULT_SGR_ATTR =
 
     this.moveCursorRight = function(n){
 	console.log('[BrowserIDE][CursorRight]:' + n);
+
+	n = n === 0 ? 1 : n;
 	
-	this.$cursor.x += 1;
+	this.$cursor.x += n;
 
 	if( this.$cursor.x >= this.$nCol ){
 	    this.$cursor.x = this.$nCol - 1;
@@ -994,7 +1043,6 @@ Terminal.DEFAULT_SGR_ATTR =
     };
     
     this.refreshCursor = function(){
-	this.$showCursor = 1;
 	this.$blink_state ^= 1;
 	this.renderMatrix(this.$disp.b + this.$cursor.y, this.$disp.b + this.$cursor.y);
     };
@@ -1081,7 +1129,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		break;
 	    case 25:
 		//[DECTCEM] Show cursor
-		
+		this.$showCursor = 1;
 		break;
 	    case 38:
 		//[DECTEK]  Switch to TEK window
@@ -1150,18 +1198,20 @@ Terminal.DEFAULT_SGR_ATTR =
 		    disp_e: this.$disp.e,
 		    rows: this.$rows
 		};
+
 		//remove previous context
-		parent = this.$root.parentNode;
-		if (parent){
-		    parent.removeChild(this.$root);
+		var parentNode = this.$root.parentNode;
+		if (parentNode){
+		    parentNode.removeChild(this.$root);
 		}
 		
 		//reset terminal
-		Terminal.call(this);
-		this.$contextBuffer = contextBuffer;
-		this.draw();
+		Terminal.call(this, this.$nRow, this.$nCol);
+
 		this.renderMatrix(0, this.$nRow - 1);
-		
+
+		this.$contextBuffer = contextBuffer;
+
 		this.$parse_state = Terminal.COMMON;
 		break;
 	    case 2004:
@@ -1180,6 +1230,113 @@ Terminal.DEFAULT_SGR_ATTR =
 	}
     };
 
+    this.resetDECMode = function(params){
+	for(var i=0; i<params.length; i++){
+	    var mode = params[i];
+
+	    switch(mode){
+	    case 1:
+		//normal cursor keys
+		
+		break;
+	    case 3:
+		//80 column mode
+		break;
+	    case 5:
+		//Normal video mode
+		break;
+	    case 6:
+		//disables origin mode
+		//- The home cursor position is at the upper-left
+		//  corner of the screen
+		//- The starting porint for line numbers
+		//  independent of the margins
+		//  - The cursor can move outside of the margins
+		break;
+	    case 7:
+		//Disables autowrap mode
+		break;
+	    case 8:
+		//No auto-repeat keys
+		break;
+	    case 9:
+		//Disables mouse tracking
+		break;
+	    case 12:
+		//Steady cursor
+		
+		break;
+	    case 19:
+		//limit print to scrolling region.
+		break;
+	    case 25:
+		//hide cursor
+		this.$showCursor = false;
+		break;
+	    case 38:
+		//Do nothing
+		break;
+	    case 47:
+		//Switch to normal screen buffer
+		break;
+	    case 59:
+		//Katakana terminal mode
+		break;
+	    case 66:
+		//Numeric keypad mode.
+		this.$isApplicationKeypad = false;
+		break;
+	    case 67:
+		//Backspace keys send DEL
+		break;
+	    case 69:
+		//Disable left and right margins. DECSLRM
+		//can not set margins. SCP can save cursor
+		//position
+		break;
+	    case 1000:
+	    case 1002:
+	    case 1003:
+		//Disables mouse tracking
+		
+		break;
+	    case 1004:
+		//Disables focus reporting mode.
+		break;
+	    case 1005:
+	    case 1006:
+	    case 1015:
+		//Disables extended mouse reporting format
+		
+		break;
+	    case 1047:
+		//Clear screen , and switch to normal screen buffer
+		break;
+	    case 1048:
+		//restore cursor position
+		break;
+	    case 1049:
+		//Clear screen , switch to normal screen buffer.
+		//and restore cursor position.
+		break;
+	    case 2004:
+		//Disables bracketed paste mode
+		break;
+	    case 7727:
+		//Disables Application Escape mode.
+		break;
+	    case 7786:
+		//Disables mouse wheel - cursor key
+		//translation
+		break;
+	    default:
+		//ignore
+		console.error('[BrowserIDE][RESET_DEC]Unknown DEC Mode number:' + mode);
+
+	    } /* end of switch mode */
+	} /* end of for(var i=0; i<params.length; i++)  */
+    };
+    
     this.insertSpaces = function(param){
 	var r = this.$disp.b + this.$cursor.y;
 	var iCol = this.$cursor.x;
@@ -1205,6 +1362,17 @@ Terminal.DEFAULT_SGR_ATTR =
 	}
     };
 
+    this.setMatrixMargin = function(){
+	var params = this.$escParams;
+
+	this.$cursor.x = 0;
+	this.$cursor.y = 0;
+
+	this.$disp.b = (params[0] || 1) - 1;
+	this.$disp.e = (params[1] || this.$nRow) - 1;
+    };
+
+    
     this.onKeyPress = function(e){
 	var keycode = 0;
 	var ch = null;
@@ -1398,6 +1566,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	this.$curParam = 0;
 	this.$escParams = [];
 	this.$isCsiQuestionMarked = false;
+	this.$isCsiGtMarked = false;
     };
     
     //send data to server
