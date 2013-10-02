@@ -1578,7 +1578,9 @@ Terminal.DEFAULT_SGR_ATTR =
 
 //EventEmitter , node.js style api
 function EventEmitter(){
-    this.$events = {};
+    //use previous events while it's exists
+    //e.g: DECSET mode , recall this function as reconstruct Terminal 
+    this.$events = this.$events || {};
 }
 
 (function(){
