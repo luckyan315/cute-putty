@@ -8,6 +8,9 @@
   3. Partial rendering (by row ? or col ?)
   4. support resize window
   5. support mouse common operation & context menu (copy , paste)
+  6. improve cursor position accuracy (normal/vim)
+  7. suppor repl API
+  8. Edge testing (max scrolling line)
 
 
 

@@ -42,7 +42,7 @@ function Terminal(r, c){
 
     /* internal model matrix to be rendered */
     this.$rows = [];
-    for(var i=0; i<Terminal.MAX_ROW; i++){
+    for(var i=0; i<this.$nRow; i++){
 	var row = []; //row
 	for(var j=0; j<this.$nCol; j++){
 	    row[j] = [' ', Terminal.DEFAULT_SGR_ATTR];
@@ -169,6 +169,10 @@ Terminal.DEFAULT_SGR_ATTR =
 		case '\x1b':
 		    this.$parse_state = Terminal.ESC;
 		    break;
+		case '\x07':
+		    //bell, recv while emit scrolling event
+		    this.$parse_state = Terminal.COMMON;
+		    break;
 		case '\t':
 		    //TODO: next tab pos
 		    
@@ -179,10 +183,12 @@ Terminal.DEFAULT_SGR_ATTR =
 		    
 		    if( this.$cursor.y > this.$nRow - 1){
 			this.$cursor.y = this.$nRow - 1;
-
+			
+			//add blank line
+			this.addBlankLine();
+			
 			//move down display matrix
-			this.$disp.b++;
-			this.$disp.e++;
+			this.moveDownMatrix();
 		    }
 		    
 		    break;
@@ -204,8 +210,7 @@ Terminal.DEFAULT_SGR_ATTR =
 			    this.$cursor.y = this.$nRow - 1;
 
 			    //move down display matrix
-			    this.$disp.b++;
-			    this.$disp.e++;
+			    this.moveDownMatrix();
 			}
 		    }
 
@@ -221,6 +226,8 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		case 'N':
 		    //TODO: ESC N
+		    //Single shift select of G2 character set(ss2 is 0X8e).
+		    //This affects next character only.
 		    this.$parse_state = Terminal.SS2;
 		    break;
 		case 'O':
@@ -244,10 +251,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    //TODO: ESC ]
 		    this.$parse_state = Terminal.OSC;
 		    break;
-		case '\x07':
-		    //bell
-		    this.$parse_state = Terminal.COMMON;
-		    break;
+
 		case '=':
 		    //using application keypad mode
 		    this.$isApplicationKeypad = true;
@@ -260,7 +264,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    break;
 		default:
 		    //
-		    console.error('[BrowserIDE][ESC]Unkown PARSE_STATE:' + ch); 
+		    console.error('[BrowserIDE][ESC]Unkown PARSE_STATE:' + ch);
 		    break;
 		};
 
@@ -1062,27 +1066,20 @@ Terminal.DEFAULT_SGR_ATTR =
 	if( e.wheelDelta >= 0 ){
 	    //TODO: scroll up
 	    this.$cursor.y++;
-	    
-	    this.$disp.b--;
-	    this.$disp.e--;
-	    if( this.$disp.b < 0 ){
-		this.$disp.b = 0;
-		this.$disp.e++;
+	    this.moveUpMatrix();
+
+	    if( this.$disp.b === 0 ){
+		this.$cursor.y--;
 	    }
 	    
-	    // this.send('\x1b[S'); //return BEl('\x07') 
 	} else {
 	    //TODO: scroll down
 	    this.$cursor.y--;
+	    this.moveDownMatrix();
 	    
-	    this.$disp.b++;
-	    this.$disp.e++;
-	    if( this.$disp.e > Terminal.MAX_ROW -1 ){
-		this.$disp.b--;
-		this.$disp.e--;
+	    if( this.$disp.e === this.$rows.length - 1 ){
+		this.$cursor.y++;
 	    }
-	    
-	    // this.send('\x1b[T'); //return BEl('\x07')
 	}
 
 	this.renderMatrix(this.$disp.b, this.$disp.e);
@@ -1198,7 +1195,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		    disp_e: this.$disp.e,
 		    rows: this.$rows
 		};
-
+		
 		//remove previous context
 		var parentNode = this.$root.parentNode;
 		if (parentNode){
@@ -1207,11 +1204,11 @@ Terminal.DEFAULT_SGR_ATTR =
 		
 		//reset terminal
 		Terminal.call(this, this.$nRow, this.$nCol);
-
+		
 		this.renderMatrix(0, this.$nRow - 1);
-
+		
 		this.$contextBuffer = contextBuffer;
-
+		
 		this.$parse_state = Terminal.COMMON;
 		break;
 	    case 2004:
@@ -1251,7 +1248,7 @@ Terminal.DEFAULT_SGR_ATTR =
 		//  corner of the screen
 		//- The starting porint for line numbers
 		//  independent of the margins
-		//  - The cursor can move outside of the margins
+		//- The cursor can move outside of the margins
 		break;
 	    case 7:
 		//Disables autowrap mode
@@ -1561,7 +1558,38 @@ Terminal.DEFAULT_SGR_ATTR =
 	}
 
     }; /* end of onkeydown */
-    
+
+    this.addBlankLine = function(){
+	var iCol = 0;
+	var r = [];
+	
+	for(; iCol<this.$nCol; iCol++){
+	    r[iCol] = [' ', Terminal.DEFAULT_SGR_ATTR];
+	}
+	this.$rows.push(r);
+    };
+
+    this.moveDownMatrix = function(){
+	this.$disp.b++;
+	this.$disp.e++;
+
+	if( this.$disp.e > this.$rows.length - 1 ){
+	    this.$disp.b--;
+	    this.$disp.e = this.$rows.length - 1;
+	}
+
+    };
+
+    this.moveUpMatrix = function(){
+	this.$disp.b--;
+	this.$disp.e--;
+
+	if( this.$disp.b < 0 ){
+	    this.$disp.b = 0;
+	    this.$disp.e++;
+	}
+    };
+
     this.clearEscParams = function(){
 	this.$curParam = 0;
 	this.$escParams = [];
