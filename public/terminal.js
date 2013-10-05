@@ -25,9 +25,17 @@ function main(){
     //try to get data from server, for test...
     term.send('\r'); 
 
+    term.resize(24, 80);
 
+    document.getElementById('btn').onclick = function(){
+	var oWidth = document.getElementById('width');
+	var oHeight = document.getElementById('height');
+
+	if( term ){
+	    term.resize(parseInt(oHeight.value, 10), parseInt(oWidth.value, 10));
+	}
+    }
 }
-
 
 function Terminal(r, c){
     EventEmitter.call(this);
@@ -705,6 +713,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	var oRowDiv = null;
 	this.$root = this.$document.createElement('div');
 	this.$root.className = 'terminal';
+	this.$root.id = 'terminal';
 	this.$rowDivs = [];
 	
 	for(var i = 0; i < this.$nRow; i++) {
@@ -737,8 +746,8 @@ Terminal.DEFAULT_SGR_ATTR =
 	document.onmousewheel = _this.onMouseWheel.bind(_this);
 	
 	//ascii ansi... digitals
-	document.onkeypress = _this.onKeyPress.bind(_this);
-	document.onkeydown = _this.onKeyDown.bind(_this);
+	this.$root.onkeypress = _this.onKeyPress.bind(_this);
+	this.$root.onkeydown = _this.onKeyDown.bind(_this);
     };  
 
     this.setCharAttr = function(){
@@ -854,17 +863,17 @@ Terminal.DEFAULT_SGR_ATTR =
 	var iRow = 0; //real row index of matrix model
 	var iRowDiv = 0; //row index of the Divs
 	
-	if( rStart ){
+	if( rStart || rEnd){
 	    iRow = rStart;
 
             if( rStart === rEnd ){
 		iRowDiv = this.$cursor.y;
 	    } else if((rEnd - rStart) >= this.$nRow / 2 ){
 		//remove previous context
-		// var bodyNode = this.$root.parentNode;
-		// if (bodyNode){
-		//     bodyNode.removeChild(this.$root);
-		// }
+		var parentNode = this.$root.parentNode;
+		if (parentNode){
+		    parentNode.removeChild(this.$root);
+		}
 	    }
 	}
 	
@@ -873,7 +882,7 @@ Terminal.DEFAULT_SGR_ATTR =
 	    var htmlStart = '';
 	    var bSpanOpen = false;
 	    
-	    for(var iCol=0; iCol< this.$nCol; iCol++){
+	    for(var iCol=0; iCol< this.$nCol/* && this.$rows[iRow][iCol] */; iCol++){
 		var ch = this.$rows[iRow][iCol][0];
 		var attr = this.$rows[iRow][iCol][1];
 		
@@ -954,7 +963,14 @@ Terminal.DEFAULT_SGR_ATTR =
 
 	    if( this.$rowDivs[iRowDiv] ){
 		this.$rowDivs[iRowDiv].innerHTML = htmlStart;
-	    }
+	    } // else {
+	    // 	//if no dom element, insert one
+	    // 	var oDiv = this.$document.createElement('div');
+	    // 	oDiv.innerHTML = htmlStart;
+
+	    // 	this.$root.appendChild(oDiv);
+	    // 	this.$rowDivs.push(oDiv);
+	    // }
 
 	    // console.info('[BrowserIDE][Render][Row:'+ iRowDiv +']' + htmlStart);
 	}
@@ -1590,6 +1606,160 @@ Terminal.DEFAULT_SGR_ATTR =
 	}
     };
 
+    this.resize = function(nRow, nCol){
+	var rx = Math.abs(this.$nRow - nRow);
+	var cx = Math.abs(this.$nCol - nCol);
+
+	if(nRow === this.$nRow){
+	    // height ==
+
+	    if( nCol === this.$nCol ){
+		//ignore
+	    } else if(nCol < this.$nCol){
+		//width <
+		
+		//rm extra cols
+		for(var iRow=0; iRow<this.$nRow; iRow++){
+		    this.$rows[iRow].splice(nCol, cx);
+		}
+
+		//reset nCol
+		this.$nCol = nCol;
+		
+		
+	    } else {
+		//width >
+
+		//add extra cols
+		for(var iRow=0; iRow<this.$nRow; iRow++){
+		    for(var iColExt=0; iColExt<cx; iColExt++){
+			this.$rows[iRow].push([' ', Terminal.DEFAULT_SGR_ATTR]);
+		    }
+		}
+
+		//reset nCol
+		this.$nCol = nCol;
+
+	    }
+ 
+	    
+	}else if( nRow < this.$nRow ){
+	    //height <
+	    this.$disp.e -= rx;
+
+	    //rm extra rows in dom
+	    for(var iRowDel=0; iRowDel<rx; iRowDel++){
+		var oDiv = this.$rowDivs.pop();
+		this.$root.removeChild(oDiv);
+	    }
+	    
+	    //rm extra rows model
+	    this.$rows.splice(nRow, rx);
+
+	    //reset nRow
+	    this.$nRow = nRow;
+
+	    if(nCol === this.$nCol){
+		//ignore
+		
+	    } else if( nCol < this.$nCol ){
+		//width <
+
+		//rm extra cols model
+		for(var iRow=0; iRow<this.$nRow; iRow++){
+		    this.$rows[iRow].splice(nCol, cx);
+		}
+		
+		//reset nCol
+		this.$nCol = nCol;
+	    } else {
+		//width >
+
+		//add extra cols model
+		for(var iRow=0; iRow<this.$nRow; iRow++){
+		    for(var iColExt=0; iColExt<cx; iColExt++){
+			this.$rows[iRow].push([' ', Terminal.DEFAULT_SGR_ATTR]);
+		    }
+		}
+
+		//reset nCol
+		this.$nCol = nCol;
+	    }
+
+	} else {
+	    //height >
+	    this.$disp.e += rx;
+	    
+	    //add extra rows to model 
+	    if( nCol === this.$nCol ){
+		//add blank rows 
+		for(var iRowExt=0; iRowExt<rx; iRowExt++){
+		    //add model
+		    this.addBlankLine();
+
+		    //add dom
+		    var oDiv = this.$document.createElement('div');
+		    this.$root.appendChild(oDiv);
+		    this.$rowDivs.push(oDiv);
+		}
+		
+	    } else if(nCol < this.$nCol){
+		// width <
+
+		//rm extra cols model
+		for(var iRow=0; iRow<this.$nRow; iRow++){
+		    this.$rows[iRow].splice(nCol, cx);
+		}
+
+		//reset nCol
+		this.$nCol = nCol;
+              
+		//add blank rows model
+		for(var iRowExt=0; iRowExt<rx; iRowExt++){
+		    //add model
+		    this.addBlankLine();
+
+		    //add dom
+		    var oDiv = this.$document.createElement('div');
+		    this.$root.appendChild(oDiv);
+		    this.$rowDivs.push(oDiv);
+		}
+		
+	    } else {
+		// width >
+
+		//add extra cols model
+		for(var iRow=0; iRow<this.$nRow; iRow++){
+		    for(var iColExt=0; iColExt<cx; iColExt++){
+			this.$rows[iRow].push([' ', Terminal.DEFAULT_SGR_ATTR]);
+		    }
+		}
+
+		//reset nCol
+		this.$nCol = nCol;
+
+		//add blank rows model
+		for(var iRowExt=0; iRowExt<rx; iRowExt++){
+		    //add model
+		    this.addBlankLine();
+
+		    //add dom
+		    var oDiv = this.$document.createElement('div');
+		    this.$root.appendChild(oDiv);
+		    this.$rowDivs.push(oDiv);
+		}		
+	    }
+
+	    
+	    //reset nRow
+	    this.$nRow = nRow;
+	}
+
+	
+	
+	this.renderMatrix(this.$disp.b, this.$disp.e);
+    };
+    
     this.clearEscParams = function(){
 	this.$curParam = 0;
 	this.$escParams = [];
