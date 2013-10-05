@@ -746,8 +746,9 @@ Terminal.DEFAULT_SGR_ATTR =
 	document.onmousewheel = _this.onMouseWheel.bind(_this);
 	
 	//ascii ansi... digitals
-	this.$root.onkeypress = _this.onKeyPress.bind(_this);
-	this.$root.onkeydown = _this.onKeyDown.bind(_this);
+
+	this.$document.onkeypress = _this.onKeyPress.bind(_this);
+	this.$document.onkeydown = _this.onKeyDown.bind(_this);
     };  
 
     this.setCharAttr = function(){
