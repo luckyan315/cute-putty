@@ -26,15 +26,6 @@ function main(){
     term.send('\r'); 
 
     term.resize(24, 80);
-
-    document.getElementById('btn').onclick = function(){
-	var oWidth = document.getElementById('width');
-	var oHeight = document.getElementById('height');
-
-	if( term ){
-	    term.resize(parseInt(oHeight.value, 10), parseInt(oWidth.value, 10));
-	}
-    }
 }
 
 function Terminal(r, c){
@@ -747,8 +738,8 @@ Terminal.DEFAULT_SGR_ATTR =
 	
 	//ascii ansi... digitals
 
-	this.$document.onkeypress = _this.onKeyPress.bind(_this);
-	this.$document.onkeydown = _this.onKeyDown.bind(_this);
+	document.onkeypress = _this.onKeyPress.bind(_this);
+	document.onkeydown = _this.onKeyDown.bind(_this);
     };  
 
     this.setCharAttr = function(){
@@ -1620,30 +1611,18 @@ Terminal.DEFAULT_SGR_ATTR =
 		//width <
 		
 		//rm extra cols
-		for(var iRow=0; iRow<this.$nRow; iRow++){
-		    this.$rows[iRow].splice(nCol, cx);
-		}
-
+		this.removeCols(0, this.$nRow-1, nCol, cx);
+		
 		//reset nCol
 		this.$nCol = nCol;
-		
-		
 	    } else {
 		//width >
 
 		//add extra cols
-		for(var iRow=0; iRow<this.$nRow; iRow++){
-		    for(var iColExt=0; iColExt<cx; iColExt++){
-			this.$rows[iRow].push([' ', Terminal.DEFAULT_SGR_ATTR]);
-		    }
-		}
-
+		this.addBlankCols(0, this.$nRow-1, cx);
 		//reset nCol
 		this.$nCol = nCol;
-
 	    }
- 
-	    
 	}else if( nRow < this.$nRow ){
 	    //height <
 	    this.$disp.e -= rx;
@@ -1656,111 +1635,104 @@ Terminal.DEFAULT_SGR_ATTR =
 	    
 	    //rm extra rows model
 	    this.$rows.splice(nRow, rx);
-
 	    //reset nRow
 	    this.$nRow = nRow;
 
 	    if(nCol === this.$nCol){
 		//ignore
-		
 	    } else if( nCol < this.$nCol ){
 		//width <
 
 		//rm extra cols model
-		for(var iRow=0; iRow<this.$nRow; iRow++){
-		    this.$rows[iRow].splice(nCol, cx);
-		}
-		
+		this.removeCols(0, this.$nRow-1, nCol, cx);
 		//reset nCol
 		this.$nCol = nCol;
 	    } else {
 		//width >
 
 		//add extra cols model
-		for(var iRow=0; iRow<this.$nRow; iRow++){
-		    for(var iColExt=0; iColExt<cx; iColExt++){
-			this.$rows[iRow].push([' ', Terminal.DEFAULT_SGR_ATTR]);
-		    }
-		}
-
+		this.addBlankCols(0, this.$nRow-1, cx);
 		//reset nCol
 		this.$nCol = nCol;
 	    }
 
 	} else {
 	    //height >
+
 	    this.$disp.e += rx;
-	    
+
 	    //add extra rows to model 
 	    if( nCol === this.$nCol ){
-		//add blank rows 
-		for(var iRowExt=0; iRowExt<rx; iRowExt++){
-		    //add model
-		    this.addBlankLine();
 
-		    //add dom
-		    var oDiv = this.$document.createElement('div');
-		    this.$root.appendChild(oDiv);
-		    this.$rowDivs.push(oDiv);
-		}
-		
+		this.addBlankRows(rx);
 	    } else if(nCol < this.$nCol){
 		// width <
 
 		//rm extra cols model
-		for(var iRow=0; iRow<this.$nRow; iRow++){
-		    this.$rows[iRow].splice(nCol, cx);
-		}
-
+		this.removeCols(0, this.$nRows-1, nCol, cx);
 		//reset nCol
 		this.$nCol = nCol;
-              
 		//add blank rows model
-		for(var iRowExt=0; iRowExt<rx; iRowExt++){
-		    //add model
-		    this.addBlankLine();
-
-		    //add dom
-		    var oDiv = this.$document.createElement('div');
-		    this.$root.appendChild(oDiv);
-		    this.$rowDivs.push(oDiv);
-		}
-		
+		this.addBlankRows(rx);
 	    } else {
 		// width >
 
-		//add extra cols model
-		for(var iRow=0; iRow<this.$nRow; iRow++){
-		    for(var iColExt=0; iColExt<cx; iColExt++){
-			this.$rows[iRow].push([' ', Terminal.DEFAULT_SGR_ATTR]);
-		    }
-		}
-
+		//add extra cols
+		this.addBlankCols(0, this.$nRow-1, cx);
 		//reset nCol
 		this.$nCol = nCol;
-
 		//add blank rows model
-		for(var iRowExt=0; iRowExt<rx; iRowExt++){
-		    //add model
-		    this.addBlankLine();
-
-		    //add dom
-		    var oDiv = this.$document.createElement('div');
-		    this.$root.appendChild(oDiv);
-		    this.$rowDivs.push(oDiv);
-		}		
+		this.addBlankRows(rx);
 	    }
-
-	    
 	    //reset nRow
 	    this.$nRow = nRow;
 	}
 
-	
-	
 	this.renderMatrix(this.$disp.b, this.$disp.e);
     };
+
     
+    /**
+     * 
+     * @param {Int} nCols The number of cols to remove
+     * @return {void}
+     */
+    this.removeCols = function(iRowStart, iRowEnd, iColStart, nCols){
+
+	for(var iRow=iRowStart; iRow<=iRowEnd; iRow++){
+	    this.$rows[iRow].splice(iColStart, nCols);
+	}
+	
+    };
+    
+    this.addBlankCols = function(iRowStart, iRowEnd, nCols){
+	for(var iRow=iRowStart; iRow<=iRowEnd; iRow++){
+            var cnt = nCols;
+	    while(cnt--){
+		this.$rows[iRow].push([' ', Terminal.DEFAULT_SGR_ATTR]);
+	    }
+	}	
+    };
+
+    
+    /**
+     * 
+     * @param {Int} nRows the number of rows push to terminal
+     * @return {void}
+     */
+
+    this.addBlankRows = function(nRows){
+	while(nRows--){
+	    //add model
+	    this.addBlankLine();
+
+	    //add dom
+	    var oDiv = this.$document.createElement('div');
+	    this.$root.appendChild(oDiv);
+	    this.$rowDivs.push(oDiv);		    
+	}
+    }
+
     this.clearEscParams = function(){
 	this.$curParam = 0;
 	this.$escParams = [];
