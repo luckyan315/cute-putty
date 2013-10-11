@@ -1855,14 +1855,14 @@ function isDigit(ch){
 }
 
 Terminal.COLOR = {
-//idx: ['Dark',    'Bright']     
-    0: ['#000000', '#000000'], //black
-    1: ['#cd0000', '#ff0000'], //red
-    2: ['#00cd00', '#00cd00'], //green
-    3: ['#cdcd00', '#ffff00'], //yellow
-    4: ['#0000ee', '#5c5cff'], //blue
-    5: ['#cd00cd', '#ff00ff'], //magenta
-    6: ['#00cdcd', '#00ffff'], //cyan
+//idx: ['Dark',    'Bright']
+    0: ['#000000', '#555753'], //black
+    1: ['#cd0000', '#ef2929'], //red
+    2: ['#00cd00', '#8ae234'], //green
+    3: ['#cdcd00', '#fce94f'], //yellow
+    4: ['#0000ee', '#729fcf'], //blue
+    5: ['#cd00cd', '#ad7fa8'], //magenta
+    6: ['#00cdcd', '#34e2e2'], //cyan
     7: ['#e5e5e5', '#ffffff'], //white
     9: ['#303030', '#303030'] //default background color, for test
 };
