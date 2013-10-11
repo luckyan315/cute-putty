@@ -7,7 +7,7 @@
 
 function main(){
     var term = new Terminal();
-    var socket = io.connect('http://localhost:3000');
+    var socket = io.connect('http://localhost:3003');
 
     //data recv from server
     socket.on('data', function(data){
@@ -1858,7 +1858,7 @@ Terminal.COLOR = {
 //idx: ['Dark',    'Bright']     
     0: ['#000000', '#000000'], //black
     1: ['#cd0000', '#ff0000'], //red
-    2: ['#00cd00', '#00ff00'], //green
+    2: ['#00cd00', '#00cd00'], //green
     3: ['#cdcd00', '#ffff00'], //yellow
     4: ['#0000ee', '#5c5cff'], //blue
     5: ['#cd00cd', '#ff00ff'], //magenta
