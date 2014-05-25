@@ -1,5 +1,5 @@
 
-/**
+/** 
  * Module dependencies.
  */
 
@@ -16,7 +16,7 @@ var pty = require('pty.js');
 var app = express();
 
 // all environments
-app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.PORT || 3003);
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(express.favicon());
@@ -42,7 +42,7 @@ var socket = null;
     
 /* Pseudo terminal   process.env.SHELL */
 var term = pty.fork('bash', [], {
-  name: 'xterm',
+  name: 'xterm-color',
   cols: 80,
   rows: 24,
   cwd: process.env.HOME
